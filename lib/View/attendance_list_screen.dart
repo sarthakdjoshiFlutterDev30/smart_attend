@@ -21,13 +21,14 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
 
   Future<void> exportToCSVWeb(List<QueryDocumentSnapshot> docs) async {
     List<List<String>> data = [
-      ['Name', 'EnrollmentNo','Semester',
+      ['Name', 'EnrollmentNo','Course','Semester',
       'Date','Time'],
       ...docs.map((doc) {
         final d = doc.data() as Map<String, dynamic>;
         return [
           d['name'] ?? '',
           d['enrollmentNo'] ?? '',
+          d['course'] ?? '',
           d['semester'] ?? '',
           d['timestamp'] ?? '',
           d['time'] ?? '',

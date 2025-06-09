@@ -15,7 +15,7 @@ class CreateSessionScreen extends StatefulWidget {
 class _CreateSessionScreenState extends State<CreateSessionScreen> {
   String? sessionId;
   Timer? _timer;
-  int _count = 30;
+  int _count = 10;
   String? selectedCourse;
   String? selectedSemester;
   String? selectedSubjectType;
@@ -108,7 +108,7 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
       sessionId = ref.id;
     });
 
-    _timer = Timer(Duration(seconds: 30), () {
+    _timer = Timer(Duration(seconds: 10), () {
       setState(() {
         sessionId = null;
         selectedCourse=null;
