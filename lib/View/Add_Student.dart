@@ -29,9 +29,7 @@ class _Add_StudentState extends State<Add_Student> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Add Student"),
-      ),
+      appBar: AppBar(title: Text("Add Student")),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: SingleChildScrollView(
@@ -46,15 +44,13 @@ class _Add_StudentState extends State<Add_Student> {
                 decoration: InputDecoration(labelText: "Select Course"),
                 value: selectedCourse,
                 items: courseSemesters.keys.map((course) {
-                  return DropdownMenuItem(
-                    value: course,
-                    child: Text(course),
-                  );
+                  return DropdownMenuItem(value: course, child: Text(course));
                 }).toList(),
                 onChanged: (value) {
                   setState(() {
                     selectedCourse = value;
-                    selectedSemester = null; // reset semester when course changes
+                    selectedSemester =
+                        null; // reset semester when course changes
                   });
                 },
               ),
@@ -65,11 +61,8 @@ class _Add_StudentState extends State<Add_Student> {
                 items: selectedCourse == null
                     ? []
                     : courseSemesters[selectedCourse]!.map((sem) {
-                  return DropdownMenuItem(
-                    value: sem,
-                    child: Text(sem),
-                  );
-                }).toList(),
+                        return DropdownMenuItem(value: sem, child: Text(sem));
+                      }).toList(),
                 onChanged: (value) {
                   setState(() {
                     selectedSemester = value;
@@ -106,53 +99,54 @@ class _Add_StudentState extends State<Add_Student> {
               SizedBox(height: 10),
               (_isloading)
                   ? ElevatedButton(
-                onPressed: ()async {
-                  if (name.text.trim().isEmpty ||
-                      enrollment.text.trim().isEmpty ||
-                      email.text.trim().isEmpty ||
-                      password.text.trim().isEmpty ||
-                      selectedCourse == null ||
-                      selectedSemester == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("All Fields are Required")),
-                    );
-                  } else {
-                    setState(() {
-                      _isloading = false;
-                    });
-                  UserCredential user=await FirebaseAuth.instance
-                        .createUserWithEmailAndPassword(
-                        email: email.text.trim(),
-                        password: password.text.trim());
-                    FirebaseFirestore.instance
-                        .collection("Students")
-                        .doc(user.user?.uid)
-                        .set({
-                      "name": name.text.trim(),
-                      "email": email.text.trim(),
-                      "password": password.text.trim(),
-                      "enrollment": enrollment.text.trim(),
-                      "course": selectedCourse!,
-                      "semester": selectedSemester!,
-                    }).then((_) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Student Added")),
-                      );
-                      email.clear();
-                      password.clear();
-                      name.clear();
-                      enrollment.clear();
-                      setState(() {
-                        selectedCourse = null;
-                        selectedSemester = null;
-                        _isloading = true;
-                      });
-                    });
-
-                  }
-                },
-                child: Text("Add Student"),
-              )
+                      onPressed: () async {
+                        if (name.text.trim().isEmpty ||
+                            enrollment.text.trim().isEmpty ||
+                            email.text.trim().isEmpty ||
+                            password.text.trim().isEmpty ||
+                            selectedCourse == null ||
+                            selectedSemester == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("All Fields are Required")),
+                          );
+                        } else {
+                          setState(() {
+                            _isloading = false;
+                          });
+                          UserCredential user = await FirebaseAuth.instance
+                              .createUserWithEmailAndPassword(
+                                email: email.text.trim(),
+                                password: password.text.trim(),
+                              );
+                          FirebaseFirestore.instance
+                              .collection("Students")
+                              .doc(user.user?.uid)
+                              .set({
+                                "name": name.text.trim(),
+                                "email": email.text.trim(),
+                                "password": password.text.trim(),
+                                "enrollment": enrollment.text.trim(),
+                                "course": selectedCourse!,
+                                "semester": selectedSemester!,
+                              })
+                              .then((_) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text("Student Added")),
+                                );
+                                email.clear();
+                                password.clear();
+                                name.clear();
+                                enrollment.clear();
+                                setState(() {
+                                  selectedCourse = null;
+                                  selectedSemester = null;
+                                  _isloading = true;
+                                });
+                              });
+                        }
+                      },
+                      child: Text("Add Student"),
+                    )
                   : CircularProgressIndicator(),
             ],
           ),

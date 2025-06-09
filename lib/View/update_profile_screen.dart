@@ -17,7 +17,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   late TextEditingController enrollmentController;
   String? selectedCourse;
   String? selectedSemester;
-  bool _isLoading=true;
+  bool _isLoading = true;
   final Map<String, List<String>> courseSemesters = {
     'MCA': ['1', '2', '3', '4'],
     'BCA': ['1', '2', '3', '4', '5', '6'],
@@ -36,7 +36,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
 
   Future<void> updateStudent() async {
     setState(() {
-      _isLoading=false;
+      _isLoading = false;
     });
     await FirebaseFirestore.instance
         .collection("Students")
@@ -45,12 +45,13 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
           'name': nameController.text.trim(),
           'enrollment': enrollmentController.text.trim(),
           'course': selectedCourse,
-          'semester':selectedSemester,
-        }).then((_){
+          'semester': selectedSemester,
+        })
+        .then((_) {
           setState(() {
-            _isLoading=true;
+            _isLoading = true;
           });
-    });
+        });
 
     ScaffoldMessenger.of(
       context,
@@ -105,12 +106,13 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
               },
             ),
             const SizedBox(height: 20),
-            (_isLoading)?
-            ElevatedButton.icon(
-              icon: const Icon(Icons.update),
-              label: const Text("Update"),
-              onPressed: updateStudent,
-            ):CircularProgressIndicator(),
+            (_isLoading)
+                ? ElevatedButton.icon(
+                    icon: const Icon(Icons.update),
+                    label: const Text("Update"),
+                    onPressed: updateStudent,
+                  )
+                : CircularProgressIndicator(),
           ],
         ),
       ),

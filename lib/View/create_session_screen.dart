@@ -72,11 +72,13 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
   List<Map<String, String>> get subjectsByType {
     if (selectedCourse == null ||
         selectedSemester == null ||
-        selectedSubjectType == null)
+        selectedSubjectType == null) {
       return [];
+    }
     final subjects = courseDetails[selectedCourse!]![selectedSemester!]!;
     return subjects.where((s) => s['type'] == selectedSubjectType).toList();
   }
+
   void startCountdown() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_count > 0) {
@@ -102,7 +104,10 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
     startCountdown();
     DocumentReference ref = await FirebaseFirestore.instance
         .collection('sessions')
-        .add({'name': fileName,  'createdAt':DateFormat('ddMMyyyy').format(DateTime.now())});
+        .add({
+          'name': fileName,
+          'createdAt': DateFormat('ddMMyyyy').format(DateTime.now()),
+        });
 
     setState(() {
       sessionId = ref.id;
@@ -111,11 +116,10 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
     _timer = Timer(Duration(seconds: 10), () {
       setState(() {
         sessionId = null;
-        selectedCourse=null;
-        selectedSemester=null;
-        selectedSubjectType=null;
-        selectedSubject=null;
-
+        selectedCourse = null;
+        selectedSemester = null;
+        selectedSubjectType = null;
+        selectedSubject = null;
       });
     });
   }
@@ -148,15 +152,17 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
                   });
                 },
               ),
-        
+
               const SizedBox(height: 20),
-        
+
               // Semester Dropdown
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(labelText: 'Select Semester'),
                 value: selectedSemester,
                 items: semesters
-                    .map((sem) => DropdownMenuItem(value: sem, child: Text(sem)))
+                    .map(
+                      (sem) => DropdownMenuItem(value: sem, child: Text(sem)),
+                    )
                     .toList(),
                 onChanged: (value) {
                   setState(() {
@@ -166,9 +172,9 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
                   });
                 },
               ),
-        
+
               const SizedBox(height: 20),
-        
+
               // Subject Type Dropdown
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(
@@ -177,7 +183,8 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
                 value: selectedSubjectType,
                 items: subjectTypes
                     .map(
-                      (type) => DropdownMenuItem(value: type, child: Text(type)),
+                      (type) =>
+                          DropdownMenuItem(value: type, child: Text(type)),
                     )
                     .toList(),
                 onChanged: (value) {
@@ -187,9 +194,9 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
                   });
                 },
               ),
-        
+
               const SizedBox(height: 20),
-        
+
               // Subject Dropdown (name + code)
               DropdownButtonFormField<Map<String, String>>(
                 decoration: const InputDecoration(labelText: 'Select Subject'),
@@ -211,7 +218,7 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
                   });
                 },
               ),
-        
+
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: createSession,
@@ -226,7 +233,10 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
                     QrImageView(data: sessionId!, size: 250),
                     Text(
                       '$_count',
-                      style: const TextStyle(fontSize: 80, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 80,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),

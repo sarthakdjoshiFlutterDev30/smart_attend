@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+
 import '../Model/student_model.dart';
 import 'update_profile_screen.dart';
 
@@ -23,9 +24,9 @@ class StudentProfileScreen extends StatelessWidget {
 
   Future<void> deleteStudent(BuildContext context, String docId) async {
     await FirebaseFirestore.instance.collection("Students").doc(docId).delete();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Student deleted")),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("Student deleted")));
     Navigator.pop(context);
   }
 
@@ -51,11 +52,26 @@ class StudentProfileScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Name: ${student.name}", style: const TextStyle(fontSize: 18)),
-                Text("Email: ${student.email}", style: const TextStyle(fontSize: 18)),
-                Text("Enrollment: ${student.enrollment}", style: const TextStyle(fontSize: 18)),
-                Text("Course: ${student.course}", style: const TextStyle(fontSize: 18)),
-                Text("Semester: ${student.semester}", style: const TextStyle(fontSize: 18)),
+                Text(
+                  "Name: ${student.name}",
+                  style: const TextStyle(fontSize: 18),
+                ),
+                Text(
+                  "Email: ${student.email}",
+                  style: const TextStyle(fontSize: 18),
+                ),
+                Text(
+                  "Enrollment: ${student.enrollment}",
+                  style: const TextStyle(fontSize: 18),
+                ),
+                Text(
+                  "Course: ${student.course}",
+                  style: const TextStyle(fontSize: 18),
+                ),
+                Text(
+                  "Semester: ${student.semester}",
+                  style: const TextStyle(fontSize: 18),
+                ),
                 const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -67,7 +83,8 @@ class StudentProfileScreen extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => UpdateProfileScreen(student: student),
+                            builder: (_) =>
+                                UpdateProfileScreen(student: student),
                           ),
                         );
                       },
@@ -75,11 +92,13 @@ class StudentProfileScreen extends StatelessWidget {
                     ElevatedButton.icon(
                       icon: const Icon(Icons.delete),
                       label: const Text("Delete"),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
                       onPressed: () => deleteStudent(context, student.id),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           );

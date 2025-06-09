@@ -1,10 +1,9 @@
 import 'dart:convert';
+import 'dart:html' as html; // Add this at the top (only for Web)
 
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:csv/csv.dart';
-import 'dart:io';
-import 'dart:html' as html; // Add this at the top (only for Web)
+import 'package:flutter/material.dart';
 
 class AttendanceListScreen extends StatefulWidget {
   const AttendanceListScreen({super.key});
@@ -17,12 +16,9 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
   String? selectedSessionId;
   String? selectedSessionName;
 
-
-
   Future<void> exportToCSVWeb(List<QueryDocumentSnapshot> docs) async {
     List<List<String>> data = [
-      ['Name', 'EnrollmentNo','Course','Semester',
-      'Date','Time'],
+      ['Name', 'EnrollmentNo', 'Course', 'Semester', 'Date', 'Time'],
       ...docs.map((doc) {
         final d = doc.data() as Map<String, dynamic>;
         return [
@@ -33,7 +29,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
           d['timestamp'] ?? '',
           d['time'] ?? '',
         ];
-      })
+      }),
     ];
 
     final csvData = const ListToCsvConverter().convert(data);
@@ -46,7 +42,6 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
       ..setAttribute("download", "$selectedSessionName-attendance.csv")
       ..click();
     html.Url.revokeObjectUrl(url);
-
   }
 
   @override
@@ -56,7 +51,9 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
       body: Column(
         children: [
           StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('sessions').snapshots(),
+            stream: FirebaseFirestore.instance
+                .collection('sessions')
+                .snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) return const CircularProgressIndicator();
 
@@ -65,10 +62,11 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
               // ✅ Remove duplicates by session name
               final seenNames = <String>{};
               final uniqueSessions = allSessions.where((doc) {
-                final name = (doc.data() as Map<String, dynamic>)['name']
-                    ?.toString()
-                    .trim()
-                    .toLowerCase() ??
+                final name =
+                    (doc.data() as Map<String, dynamic>)['name']
+                        ?.toString()
+                        .trim()
+                        .toLowerCase() ??
                     '';
                 if (seenNames.contains(name)) {
                   return false;
@@ -82,7 +80,9 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                 value: selectedSessionId,
                 hint: const Text("Select Session"),
                 onChanged: (value) {
-                  final session = uniqueSessions.firstWhere((s) => s.id == value);
+                  final session = uniqueSessions.firstWhere(
+                    (s) => s.id == value,
+                  );
                   final sessionData = session.data() as Map<String, dynamic>;
                   setState(() {
                     selectedSessionId = value;
@@ -118,12 +118,17 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                         child: ListView.builder(
                           itemCount: attendees.length,
                           itemBuilder: (context, index) {
-                            final data = attendees[index].data() as Map<String, dynamic>;
+                            final data =
+                                attendees[index].data() as Map<String, dynamic>;
                             return ListTile(
                               title: Text(data['name'] ?? 'N/A'),
-                              subtitle: Text("EnrollmentNo: ${data['enrollmentNo'] ?? 'N/A'}"),
-                              trailing: Text(('${data['timestamp']}-${data['time']}')
-                                     .toString()),
+                              subtitle: Text(
+                                "EnrollmentNo: ${data['enrollmentNo'] ?? 'N/A'}",
+                              ),
+                              trailing: Text(
+                                ('${data['timestamp']}-${data['time']}')
+                                    .toString(),
+                              ),
                             );
                           },
                         ),

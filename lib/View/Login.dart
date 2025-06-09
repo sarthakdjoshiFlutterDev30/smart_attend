@@ -92,60 +92,60 @@ class _LoginState extends State<Login> {
             (_isLoading)
                 ? CircularProgressIndicator()
                 : ElevatedButton(
-              onPressed: () async {
-                if (email.text.trim().isEmpty ||
-                    password.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        "Enter Email Or Password",
-                        style: TextStyle(fontSize: 18),
+                    onPressed: () async {
+                      if (email.text.trim().isEmpty ||
+                          password.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              "Enter Email Or Password",
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      } else {
+                        setState(() {
+                          _isLoading = true;
+                        });
+                        if (email.text.toString() == "admin" &&
+                            password.text.toString() == "admin123") {
+                          // Save login state
+                          SharedPreferences prefs =
+                              await SharedPreferences.getInstance();
+                          await prefs.setBool('isLoggedIn', true);
+
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HomeScreen(),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                "Email-Id And Password Is Not Same",
+                              ),
+                            ),
+                          );
+                          setState(() {
+                            _isLoading = false;
+                          });
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.zero,
                       ),
-                      duration: Duration(seconds: 2),
                     ),
-                  );
-                } else {
-                  setState(() {
-                    _isLoading = true;
-                  });
-                  if (email.text.toString() == "admin" &&
-                      password.text.toString() == "admin123") {
-                    // Save login state
-                    SharedPreferences prefs = await SharedPreferences.getInstance();
-                    await prefs.setBool('isLoggedIn', true);
-
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => HomeScreen(),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Email-Id And Password Is Not Same")),
-
-                    );
-                    setState(() {
-                      _isLoading = false;
-                    });
-
-                  }
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.zero,
-                ),
-              ),
-              child: Text(
-                "Login",
-                style: const TextStyle(
-                  fontSize: 20,
-                  color: Colors.black,
-                ),
-              ),
-            ),
+                    child: Text(
+                      "Login",
+                      style: const TextStyle(fontSize: 20, color: Colors.black),
+                    ),
+                  ),
           ],
         ),
       ),
