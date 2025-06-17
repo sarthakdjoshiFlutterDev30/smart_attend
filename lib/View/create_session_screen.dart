@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:smart_attend/View/Home.dart';
 
 class CreateSessionScreen extends StatefulWidget {
   const CreateSessionScreen({super.key});
@@ -120,6 +121,7 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
         selectedSemester = null;
         selectedSubjectType = null;
         selectedSubject = null;
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen(),));
       });
     });
   }
