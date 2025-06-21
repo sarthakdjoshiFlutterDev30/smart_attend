@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_attend/View/Login.dart';
+import 'package:smart_attend/View/Maintaince.dart';
 
 import 'firebase_options.dart';
 
@@ -18,11 +19,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Smart-Attend-Admin',
+      title: 'Smart Attendance Admin',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: Login(),
+      home: Maintenance(),
     );
   }
 }
