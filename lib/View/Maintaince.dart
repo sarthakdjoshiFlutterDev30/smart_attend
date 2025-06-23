@@ -12,7 +12,7 @@ class Maintenance extends StatelessWidget {
           width:MediaQuery.of(context).size.width*0.5,
           height: MediaQuery.of(context).size.height*0.2,
           child: Marquee(
-            text: "⚒️ Under Maintenance ⚒️  🙏 Thank YouFor Visit 🙏  🚧 Will Be Back Soon 🚧",
+            text: "⚒️ Under Maintenance ⚒️  🙏 Thank You For Visit 🙏  🚧 Will Be Back Soon 🚧",
             style: TextStyle(fontSize: 20,color: Colors.black,fontStyle: FontStyle.italic,fontWeight: FontWeight.bold),
             scrollAxis: Axis.horizontal,
             crossAxisAlignment: CrossAxisAlignment.start,
