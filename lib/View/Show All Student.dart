@@ -99,6 +99,11 @@ class _ShowAllStudentState extends State<ShowAllStudent> {
                         vertical: 6,
                       ),
                       child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage: NetworkImage(doc.photourl??""),
+
+
+                        ),
                         title: Text(doc.name ?? 'No Name'),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
