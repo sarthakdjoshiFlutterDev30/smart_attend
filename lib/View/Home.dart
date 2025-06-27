@@ -69,7 +69,7 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {
                 showDialog(context: context, builder: (context) {
                   return AlertDialog(
-                    title: Text("Change Password"),
+                    title: Text("Enter Notification Details"),
                     content: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
