@@ -108,6 +108,7 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
         .add({
           'name': fileName,
           'createdAt': DateFormat('ddMMyyyy').format(DateTime.now()),
+          'createdAtMillis': DateTime.now().millisecondsSinceEpoch,
         });
 
     setState(() {

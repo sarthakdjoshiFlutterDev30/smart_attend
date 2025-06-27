@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_attend/Controller/ApiService.dart';
 import 'package:smart_attend/View/Add_Student.dart';
 import 'package:smart_attend/View/Show%20All%20Student.dart';
 
@@ -10,6 +11,9 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var title=TextEditingController();
+    var body=TextEditingController();
+    ApiService api=ApiService();
     return Scaffold(
       appBar: AppBar(title: const Text('Admin Panel'), actions: []),
       body: Center(
@@ -57,6 +61,70 @@ class HomeScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(builder: (_) => const ShowAllStudent()),
                 );
+              },
+            ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              child: const Text('Send Notification To Students'),
+              onPressed: () {
+                showDialog(context: context, builder: (context) {
+                  return AlertDialog(
+                    title: Text("Change Password"),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(
+                          controller: title,
+                          decoration: InputDecoration(
+                            labelText: "Enter Notification Title",
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        TextField(
+                          controller: body,
+                          decoration: InputDecoration(
+                            labelText: "Enter Notification Body",
+                          ),
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          title.clear();
+                          body.clear();
+                        },
+                        child: Text("Cancel"),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (title.text.isEmpty || body.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("Fields cannot be empty")));
+                            return;
+                          }else{
+                            String title1=title.text;
+                            String body1=body.text;
+                            print(title1);
+                            print(body1);
+                            title.clear();
+                            body.clear();
+                            api.sendNotification(title1, body1).then((_){
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Notification Sent")));
+                            });
+                            Navigator.pop(context);
+
+                          }
+
+                          },
+
+                        child: Text("Send"),
+                      ),
+                    ],
+                  );
+
+                },);
               },
             ),
           ],
