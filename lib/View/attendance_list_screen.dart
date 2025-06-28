@@ -51,8 +51,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String date = '$day-$month-$year';
-    String date2 = '$day$month$year';
+    String date = '$day$month$year';
     return Scaffold(
       appBar: AppBar(
         title: const Text("Attendance Reports"),
@@ -63,7 +62,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('sessions')
-                .where('createdAt', isEqualTo: date2)
+                .where('createdAt', isEqualTo: date)
                 .snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) return const CircularProgressIndicator();
