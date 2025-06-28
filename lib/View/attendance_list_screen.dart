@@ -4,6 +4,7 @@ import 'dart:html' as html; // Add this at the top (only for Web)
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class AttendanceListScreen extends StatefulWidget {
   const AttendanceListScreen({super.key});
@@ -44,8 +45,14 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
     html.Url.revokeObjectUrl(url);
   }
 
+  String day = DateFormat('dd').format(DateTime.now());
+  String month = DateFormat('MM').format(DateTime.now());
+  String year = DateFormat('yyyy').format(DateTime.now());
+
   @override
   Widget build(BuildContext context) {
+    String date = '$day-$month-$year';
+    String date2 = '$day$month$year';
     return Scaffold(
       appBar: AppBar(
         title: const Text("Attendance Reports"),
@@ -56,6 +63,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('sessions')
+                .where('createdAt', isEqualTo: date2)
                 .snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) return const CircularProgressIndicator();
