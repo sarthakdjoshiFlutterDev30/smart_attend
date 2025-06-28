@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
@@ -36,7 +37,9 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   void initState() {
     super.initState();
     nameController = TextEditingController(text: widget.student.name);
-    enrollmentController = TextEditingController(text: widget.student.enrollment);
+    enrollmentController = TextEditingController(
+      text: widget.student.enrollment,
+    );
     selectedCourse = widget.student.course;
     selectedSemester = widget.student.semester;
   }
@@ -50,15 +53,20 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
 
     try {
       // Upload new image if selected
-      if ((kIsWeb && selectedImage != null) || (!kIsWeb && profilepic != null)) {
+      if ((kIsWeb && selectedImage != null) ||
+          (!kIsWeb && profilepic != null)) {
         final String filename = const Uuid().v4();
-        final ref = FirebaseStorage.instance.ref().child('student_profiles/$filename');
+        final ref = FirebaseStorage.instance.ref().child(
+          'student_profiles/$filename',
+        );
 
         UploadTask uploadTask;
         if (kIsWeb && selectedImage != null) {
           final bytes = await selectedImage!.readAsBytes();
           if (bytes.length > 50 * 1024) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Image must be below 50 KB")));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Image must be below 50 KB")),
+            );
             setState(() => _isLoading = true);
             return;
           }
@@ -66,7 +74,9 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         } else {
           final fileSize = await profilepic!.length();
           if (fileSize > 50 * 1024) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Image must be below 50 KB")));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Image must be below 50 KB")),
+            );
             setState(() => _isLoading = true);
             return;
           }
@@ -77,18 +87,25 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         photourl = await snapshot.ref.getDownloadURL();
       }
 
-      await FirebaseFirestore.instance.collection("Students").doc(widget.student.id).update({
-        'name': nameController.text.trim(),
-        'enrollment': enrollmentController.text.trim(),
-        'course': selectedCourse,
-        'semester': selectedSemester,
-        'photourl': photourl,
-      });
+      await FirebaseFirestore.instance
+          .collection("Students")
+          .doc(widget.student.id)
+          .update({
+            'name': nameController.text.trim(),
+            'enrollment': enrollmentController.text.trim(),
+            'course': selectedCourse,
+            'semester': selectedSemester,
+            'photourl': photourl,
+          });
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Profile updated")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Profile updated")));
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Update failed: $e")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Update failed: $e")));
     } finally {
       setState(() {
         _isLoading = true;
@@ -99,7 +116,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Update Profile")),
+      appBar: AppBar(title: const Text("Update Profile"), centerTitle: true),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -108,7 +125,9 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
               padding: EdgeInsets.zero,
               onPressed: () async {
                 try {
-                  XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
+                  XFile? pickedImage = await ImagePicker().pickImage(
+                    source: ImageSource.gallery,
+                  );
                   if (pickedImage != null) {
                     int imageSize = await pickedImage.length();
                     if (imageSize > 50 * 1024) {
@@ -135,14 +154,19 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                 radius: 40,
                 backgroundImage: kIsWeb
                     ? (selectedImage != null
-                    ? NetworkImage(selectedImage!.path)
-                    : (widget.student.photourl != null ? NetworkImage(widget.student.photourl!) : null))
+                          ? NetworkImage(selectedImage!.path)
+                          : (widget.student.photourl != null
+                                ? NetworkImage(widget.student.photourl!)
+                                : null))
                     : (profilepic != null
-                    ? FileImage(profilepic!)
-                    : (widget.student.photourl != null
-                    ? NetworkImage(widget.student.photourl!) as ImageProvider
-                    : null)),
-                child: kIsWeb && selectedImage == null || !kIsWeb && profilepic == null
+                          ? FileImage(profilepic!)
+                          : (widget.student.photourl != null
+                                ? NetworkImage(widget.student.photourl!)
+                                      as ImageProvider
+                                : null)),
+                child:
+                    kIsWeb && selectedImage == null ||
+                        !kIsWeb && profilepic == null
                     ? Icon(Icons.add_a_photo, color: Colors.black)
                     : null,
               ),
@@ -177,8 +201,8 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
               items: selectedCourse == null
                   ? []
                   : courseSemesters[selectedCourse]!.map((sem) {
-                return DropdownMenuItem(value: sem, child: Text(sem));
-              }).toList(),
+                      return DropdownMenuItem(value: sem, child: Text(sem));
+                    }).toList(),
               onChanged: (value) {
                 setState(() {
                   selectedSemester = value;
@@ -188,10 +212,10 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
             const SizedBox(height: 20),
             (_isLoading)
                 ? ElevatedButton.icon(
-              icon: const Icon(Icons.update),
-              label: const Text("Update"),
-              onPressed: updateStudent,
-            )
+                    icon: const Icon(Icons.update),
+                    label: const Text("Update"),
+                    onPressed: updateStudent,
+                  )
                 : CircularProgressIndicator(),
           ],
         ),

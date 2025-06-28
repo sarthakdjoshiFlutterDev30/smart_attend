@@ -122,7 +122,10 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
         selectedSemester = null;
         selectedSubjectType = null;
         selectedSubject = null;
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen(),));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+        );
       });
     });
   }
@@ -130,7 +133,7 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Create Session")),
+      appBar: AppBar(title: const Text("Create Session"), centerTitle: true),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20),

@@ -9,11 +9,17 @@ class Maintenance extends StatelessWidget {
     return Scaffold(
       body: Center(
         child: SizedBox(
-          width:MediaQuery.of(context).size.width*0.5,
-          height: MediaQuery.of(context).size.height*0.2,
+          width: MediaQuery.of(context).size.width * 0.5,
+          height: MediaQuery.of(context).size.height * 0.2,
           child: Marquee(
-            text: "⚒️ Under Maintenance ⚒️  🙏 Thank You For Visit 🙏  🚧 Will Be Back Soon 🚧",
-            style: TextStyle(fontSize: 20,color: Colors.black,fontStyle: FontStyle.italic,fontWeight: FontWeight.bold),
+            text:
+                "⚒️ Under Maintenance ⚒️  🙏 Thank You For Visit 🙏  🚧 Will Be Back Soon 🚧",
+            style: TextStyle(
+              fontSize: 20,
+              color: Colors.black,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.bold,
+            ),
             scrollAxis: Axis.horizontal,
             crossAxisAlignment: CrossAxisAlignment.start,
             velocity: 100.0,

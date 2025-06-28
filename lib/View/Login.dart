@@ -21,12 +21,10 @@ class _LoginState extends State<Login> {
     _checkLoginStatus();
   }
 
-  // Check if the user is already logged in
   void _checkLoginStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool? isLoggedIn = prefs.getBool('isLoggedIn');
     if (isLoggedIn == true) {
-      // Navigate to HomeScreen if already logged in
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => HomeScreen()),

@@ -47,7 +47,10 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Attendance Reports")),
+      appBar: AppBar(
+        title: const Text("Attendance Reports"),
+        centerTitle: true,
+      ),
       body: Column(
         children: [
           StreamBuilder<QuerySnapshot>(

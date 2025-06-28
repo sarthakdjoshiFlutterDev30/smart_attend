@@ -22,7 +22,7 @@ class _ShowAllStudentState extends State<ShowAllStudent> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Show All Students")),
+      appBar: AppBar(title: const Text("Show All Students"), centerTitle: true),
       body: Column(
         children: [
           Row(
@@ -100,9 +100,7 @@ class _ShowAllStudentState extends State<ShowAllStudent> {
                       ),
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundImage: NetworkImage(doc.photourl??""),
-
-
+                          backgroundImage: NetworkImage(doc.photourl ?? ""),
                         ),
                         title: Text(doc.name ?? 'No Name'),
                         subtitle: Column(
