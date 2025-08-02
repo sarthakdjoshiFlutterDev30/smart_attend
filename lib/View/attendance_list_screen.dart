@@ -69,7 +69,6 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
 
               final allSessions = snapshot.data!.docs;
 
-              // ✅ Remove duplicates by session name
               final seenNames = <String>{};
               final uniqueSessions = allSessions.where((doc) {
                 final name =
