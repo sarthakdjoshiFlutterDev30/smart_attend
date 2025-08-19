@@ -45,13 +45,9 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
     html.Url.revokeObjectUrl(url);
   }
 
-  String day = DateFormat('dd').format(DateTime.now());
-  String month = DateFormat('MM').format(DateTime.now());
-  String year = DateFormat('yyyy').format(DateTime.now());
-
   @override
   Widget build(BuildContext context) {
-    String date = '$day$month$year';
+    String date = DateFormat('dd-MM-yyyy').format(DateTime.now());
     return Scaffold(
       appBar: AppBar(
         title: const Text("Attendance Reports"),
@@ -62,7 +58,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('sessions')
-                .where('createdAt', isEqualTo: date)
+                .where('lecDate', isEqualTo: date)
                 .snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) return const CircularProgressIndicator();
@@ -72,7 +68,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
               final seenNames = <String>{};
               final uniqueSessions = allSessions.where((doc) {
                 final name =
-                    (doc.data() as Map<String, dynamic>)['name']
+                    (doc.data() as Map<String, dynamic>)['lecName']
                         ?.toString()
                         .trim()
                         .toLowerCase() ??
@@ -95,13 +91,13 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                   final sessionData = session.data() as Map<String, dynamic>;
                   setState(() {
                     selectedSessionId = value;
-                    selectedSessionName = sessionData['name'] ?? 'session';
+                    selectedSessionName = sessionData['lecName'] ?? 'session';
                   });
                 },
                 items: uniqueSessions.map((session) {
                   return DropdownMenuItem(
                     value: session.id,
-                    child: Text((session.data() as Map)['name']),
+                    child: Text((session.data() as Map)['lecName']),
                   );
                 }).toList(),
               );

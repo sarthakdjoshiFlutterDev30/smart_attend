@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:html' as html;
+import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:smart_attend/View/Home.dart';
 
 class CreateSessionScreen extends StatefulWidget {
   const CreateSessionScreen({super.key});
@@ -14,240 +16,192 @@ class CreateSessionScreen extends StatefulWidget {
 }
 
 class _CreateSessionScreenState extends State<CreateSessionScreen> {
-  String? sessionId;
-  Timer? _timer;
-  int _count = 10;
-  String? selectedCourse;
-  String? selectedSemester;
-  String? selectedSubjectType;
-  Map<String, String>? selectedSubject;
   String fileName = "";
+  List<Map<String, dynamic>> excelData = [];
+  bool isUploading = false;
+  String todayDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
+  void pickAndReadExcelWeb() {
+    html.FileUploadInputElement uploadInput = html.FileUploadInputElement();
+    uploadInput.accept = '.xlsx';
+    uploadInput.click();
 
-  final Map<String, Map<String, List<Map<String, String>>>> courseDetails = {
-    'MCA': {
-      '1': [
-        {
-          'type': 'Regular',
-          'name': 'Programming Fundamentals',
-          'code': 'MCA101',
-        },
-        {'type': 'Regular', 'name': 'Computer Organization', 'code': 'MCA102'},
-        {'type': 'Elective', 'name': 'Communication Skills', 'code': 'MCAE101'},
-      ],
-      '2': [
-        {'type': 'Regular', 'name': 'Data Structures', 'code': 'MCA201'},
-        {'type': 'Regular', 'name': 'DBMS', 'code': 'MCA202'},
-        {'type': 'Elective', 'name': 'Mathematics for CS', 'code': 'MCAE201'},
-      ],
-    },
-    'BCA': {
-      '1': [
-        {'type': 'Regular', 'name': 'Basics of IT', 'code': 'BCA101'},
-        {'type': 'Regular', 'name': 'Mathematics I', 'code': 'BCA102'},
-        {
-          'type': 'Elective',
-          'name': 'Environmental Science',
-          'code': 'BCAE101',
-        },
-      ],
-      '2': [
-        {'type': 'Regular', 'name': 'C Programming', 'code': 'BCA201'},
-        {'type': 'Regular', 'name': 'Digital Electronics', 'code': 'BCA202'},
-        {'type': 'Elective', 'name': 'Soft Skills', 'code': 'BCAE201'},
-      ],
-    },
-  };
+    uploadInput.onChange.listen((e) {
+      final file = uploadInput.files?.first;
+      if (file != null) {
+        fileName = file.name;
+        final reader = html.FileReader();
+        reader.readAsArrayBuffer(file);
 
-  List<String> get semesters {
-    if (selectedCourse == null) return [];
-    return courseDetails[selectedCourse!]!.keys.toList();
-  }
+        reader.onLoadEnd.listen((e) {
+          final result = reader.result;
+          late Uint8List uint8List;
 
-  List<String> get subjectTypes {
-    if (selectedCourse == null || selectedSemester == null) return [];
-    final subjects = courseDetails[selectedCourse!]![selectedSemester!]!;
-    // Extract distinct types
-    return subjects.map((s) => s['type']!).toSet().toList();
-  }
+          if (result is ByteBuffer) {
+            uint8List = result.asUint8List();
+          } else if (result is Uint8List) {
+            uint8List = result;
+          } else {
+            return;
+          }
 
-  List<Map<String, String>> get subjectsByType {
-    if (selectedCourse == null ||
-        selectedSemester == null ||
-        selectedSubjectType == null) {
-      return [];
-    }
-    final subjects = courseDetails[selectedCourse!]![selectedSemester!]!;
-    return subjects.where((s) => s['type'] == selectedSubjectType).toList();
-  }
+          final excel = Excel.decodeBytes(uint8List);
+          List<Map<String, dynamic>> extracted = [];
 
-  void startCountdown() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_count > 0) {
-        setState(() {
-          _count--;
+          for (var table in excel.tables.keys) {
+            final rows = excel.tables[table]!.rows;
+            for (int i = 1; i < rows.length; i++) {
+              var row = rows[i];
+              extracted.add({
+                'lecNo': row[0]?.value.toString(),
+                'lecName': row[1]?.value.toString(),
+                'lecDate': row[2]?.value.toString(),
+              });
+            }
+          }
+
+          setState(() {
+            excelData = extracted;
+          });
         });
-      } else {
-        timer.cancel();
       }
     });
   }
 
-  Future<void> createSession() async {
-    if (selectedCourse == null ||
-        selectedSemester == null ||
-        selectedSubjectType == null ||
-        selectedSubject == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Please select all fields")));
+  Future<void> uploadToFirestore() async {
+    if (excelData.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please upload an Excel file first")),
+      );
       return;
     }
-    startCountdown();
-    DocumentReference ref = await FirebaseFirestore.instance
-        .collection('sessions')
-        .add({
-          'name': fileName,
-          'createdAt': DateFormat('ddMMyyyy').format(DateTime.now()),
-          'createdAtMillis': DateTime.now().millisecondsSinceEpoch,
-        });
+
+    setState(() => isUploading = true);
+
+    WriteBatch batch = FirebaseFirestore.instance.batch();
+    for (var record in excelData) {
+      DocumentReference ref = FirebaseFirestore.instance
+          .collection('sessions')
+          .doc();
+      batch.set(ref, {
+        'lecNo': record['lecNo'],
+        'lecName': record['lecName'],
+        'lecDate': DateFormat('dd-MM-yyyy').format(
+          record['lecDate'] is DateTime
+              ? record['lecDate']
+              : DateTime.tryParse(record['lecDate'] ?? '') ?? DateTime.now(),
+        ),
+        'uploadedAt': DateTime.now().millisecondsSinceEpoch,
+        'createdAtMillis': DateTime.now().millisecondsSinceEpoch,
+      });
+    }
+    await batch.commit();
 
     setState(() {
-      sessionId = ref.id;
+      isUploading = false;
+      excelData.clear();
     });
 
-    _timer = Timer(Duration(seconds: 10), () {
-      setState(() {
-        sessionId = null;
-        selectedCourse = null;
-        selectedSemester = null;
-        selectedSubjectType = null;
-        selectedSubject = null;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
-        );
-      });
-    });
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("Data uploaded successfully")));
+  }
+
+  void showQRCode(String docId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("QR Code"),
+        content: SizedBox(
+          width: 250,
+          height: 250,
+          child: QrImageView(data: docId, size: 250),
+        ),
+        actions: [
+          TextButton(
+            child: const Text("Close"),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Create Session"), centerTitle: true),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              // Course Dropdown
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(labelText: 'Select Course'),
-                value: selectedCourse,
-                items: courseDetails.keys
-                    .map(
-                      (course) =>
-                          DropdownMenuItem(value: course, child: Text(course)),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedCourse = value;
-                    selectedSemester = null;
-                    selectedSubjectType = null;
-                    selectedSubject = null;
-                  });
+      appBar: AppBar(title: const Text("Excel Upload & View")),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            ElevatedButton(
+              onPressed: pickAndReadExcelWeb,
+              child: const Text("Pick Excel File"),
+            ),
+            const SizedBox(height: 10),
+            if (fileName.isNotEmpty) Text("Selected File: $fileName"),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: isUploading ? null : uploadToFirestore,
+              child: isUploading
+                  ? const CircularProgressIndicator()
+                  : const Text("Upload to Firestore"),
+            ),
+            const SizedBox(height: 20),
+            const Divider(),
+            const Text(
+              "Previously Uploaded Data",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('sessions')
+                    .orderBy('lecNo')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final docs = snapshot.data!.docs;
+                  if (docs.isEmpty) {
+                    return const Center(child: Text("No data found"));
+                  }
+                  return ListView.builder(
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      var data = docs[index].data() as Map<String, dynamic>;
+                      var docId = docs[index].id;
+
+                      if (data['lecDate'] != todayDate) {
+                        return const SizedBox.shrink(); // skips this item entirely
+                      }
+
+                      return ListTile(
+                        title: Text(data['lecName'] ?? ''),
+                        subtitle: Text("Lec No: ${data['lecNo']}"),
+                        trailing: ElevatedButton(
+                          onPressed: () {
+                            FirebaseFirestore.instance
+                                .collection("sessions")
+                                .doc(docId)
+                                .update({
+                                  'createdAtMillis':
+                                      DateTime.now().millisecondsSinceEpoch,
+                                })
+                                .then((_) {
+                                  showQRCode(docId);
+                                });
+                          },
+                          child: const Text("QR"),
+                        ),
+                      );
+                    },
+                  );
                 },
               ),
-
-              const SizedBox(height: 20),
-
-              // Semester Dropdown
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(labelText: 'Select Semester'),
-                value: selectedSemester,
-                items: semesters
-                    .map(
-                      (sem) => DropdownMenuItem(value: sem, child: Text(sem)),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedSemester = value;
-                    selectedSubjectType = null;
-                    selectedSubject = null;
-                  });
-                },
-              ),
-
-              const SizedBox(height: 20),
-
-              // Subject Type Dropdown
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'Select Subject Type',
-                ),
-                value: selectedSubjectType,
-                items: subjectTypes
-                    .map(
-                      (type) =>
-                          DropdownMenuItem(value: type, child: Text(type)),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedSubjectType = value;
-                    selectedSubject = null;
-                  });
-                },
-              ),
-
-              const SizedBox(height: 20),
-
-              // Subject Dropdown (name + code)
-              DropdownButtonFormField<Map<String, String>>(
-                decoration: const InputDecoration(labelText: 'Select Subject'),
-                value: selectedSubject,
-                items: subjectsByType
-                    .map(
-                      (subj) => DropdownMenuItem(
-                        value: subj,
-                        child: Text('${subj['name']} (${subj['code']})'),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedSubject = value;
-                    fileName =
-                        "${selectedSubject!['name']}(${selectedSubject!['code']})";
-                    print(fileName);
-                  });
-                },
-              ),
-
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: createSession,
-                child: const Text("Generate QR Code"),
-              ),
-              const SizedBox(height: 30),
-              if (sessionId != null)
-                Column(
-                  children: [
-                    const Text("Scan this QR to mark attendance:"),
-                    const SizedBox(height: 20),
-                    QrImageView(data: sessionId!, size: 250),
-                    Text(
-                      '$_count',
-                      style: const TextStyle(
-                        fontSize: 80,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
