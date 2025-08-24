@@ -84,7 +84,7 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
           .doc();
       batch.set(ref, {
         'lecNo': record['lecNo'],
-        'lecName': record['lecName'],
+        'lecName': record['lecName'].toString().toUpperCase(),
         'lecDate': DateFormat('dd-MM-yyyy').format(
           record['lecDate'] is DateTime
               ? record['lecDate']
