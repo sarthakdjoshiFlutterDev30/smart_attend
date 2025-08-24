@@ -37,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _DashboardItem(
         icon: Icons.person_add_alt_1,
         label: "Add Student",
-        onTap: () => _navigateTo(context, const Add_Student()),
+        onTap: () => _navigateTo(context, const AddStudent()),
       ),
       _DashboardItem(
         icon: Icons.people,

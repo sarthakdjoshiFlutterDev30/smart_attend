@@ -107,23 +107,55 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
   }
 
   void showQRCode(String docId) {
+    int secondsLeft = 10;
+    Timer? timer;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("QR Code"),
-        content: SizedBox(
-          width: 250,
-          height: 250,
-          child: QrImageView(data: docId, size: 250),
-        ),
-        actions: [
-          TextButton(
-            child: const Text("Close"),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          timer ??= Timer.periodic(const Duration(seconds: 1), (t) {
+            if (secondsLeft > 1) {
+              setState(() {
+                secondsLeft--;
+              });
+            } else {
+              t.cancel();
+              Navigator.pop(context);
+            }
+          });
+
+          return AlertDialog(
+            title: const Text("QR Code"),
+            content: SizedBox(
+              width: 250,
+              height: 250,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  QrImageView(data: docId, size: 200),
+                  const SizedBox(height: 20),
+                  Text(
+                    "Expires in $secondsLeft s",
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  timer?.cancel();
+                  Navigator.pop(context);
+                },
+                child: const Text("Close"),
+              ),
+            ],
+          );
+        },
       ),
-    );
+    ).then((_) => timer?.cancel()); // Cancel timer if dialog is manually closed
   }
 
   @override

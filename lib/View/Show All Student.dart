@@ -22,133 +22,190 @@ class _ShowAllStudentState extends State<ShowAllStudent> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Show All Students"), centerTitle: true),
-      body: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  decoration: InputDecoration(labelText: "Select Course"),
-                  value: selectedCourse,
-                  items: courseSemesters.keys.map((course) {
-                    return DropdownMenuItem(value: course, child: Text(course));
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedCourse = value;
-                      selectedSemester =
-                          null; // reset semester when course changes
-                    });
-                  },
-                ),
-              ),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  decoration: InputDecoration(labelText: "Select Semester"),
-                  value: selectedSemester,
-                  items: selectedCourse == null
-                      ? []
-                      : courseSemesters[selectedCourse]!.map((sem) {
-                          return DropdownMenuItem(value: sem, child: Text(sem));
-                        }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedSemester = value;
-                    });
-                  },
-                ),
-              ),
-            ],
-          ),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('Students')
-                  .where("course", isEqualTo: selectedCourse)
-                  .where("semester", isEqualTo: selectedSemester)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (!snapshot.hasData ||
-                    snapshot.data!.docs.isEmpty ||
-                    selectedCourse == null ||
-                    selectedSemester == null) {
-                  return const Center(child: Text("No students found."));
-                }
-
-                final studentDocs = snapshot.data!.docs;
-
-                // Convert each doc to StudentModel
-                List<StudentModel> students = studentDocs.map((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  return StudentModel.fromSnapshot(doc.id, data);
-                }).toList();
-
-                return ListView.builder(
-                  itemCount: students.length,
-                  itemBuilder: (context, index) {
-                    final doc = students[index];
-
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage: NetworkImage(doc.photourl ?? ""),
-                        ),
-                        title: Text(doc.name ?? 'No Name'),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Email: ${doc.email ?? 'No Email'}"),
-                            Text(
-                              "Enrollment: ${doc.enrollment ?? 'No Enrollment'}",
-                            ),
-                            Text("Course: ${doc.course ?? 'No Course'}"),
-                            Text("Semester: ${doc.semester ?? 'No Semester'}"),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          // Use min to avoid overflow
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blue),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        UpdateProfileScreen(student: doc),
-                                  ),
-                                );
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {
-                                FirebaseFirestore.instance
-                                    .collection('Students')
-                                    .doc(doc.id)
-                                    .delete();
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
+      appBar: AppBar(
+        title: const Text("All Students"),
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue.shade700, Colors.blue.shade400],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
           ),
-        ],
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      labelText: "Select Course",
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    value: selectedCourse,
+                    items: courseSemesters.keys.map((course) {
+                      return DropdownMenuItem(
+                        value: course,
+                        child: Text(course),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedCourse = value;
+                        selectedSemester = null;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      labelText: "Select Semester",
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    value: selectedSemester,
+                    items: selectedCourse == null
+                        ? []
+                        : courseSemesters[selectedCourse]!.map((sem) {
+                            return DropdownMenuItem(
+                              value: sem,
+                              child: Text(sem),
+                            );
+                          }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedSemester = value;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('Students')
+                    .where("course", isEqualTo: selectedCourse)
+                    .where("semester", isEqualTo: selectedSemester)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (!snapshot.hasData ||
+                      snapshot.data!.docs.isEmpty ||
+                      selectedCourse == null ||
+                      selectedSemester == null) {
+                    return const Center(
+                      child: Text(
+                        "No students found.",
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    );
+                  }
+
+                  final studentDocs = snapshot.data!.docs;
+                  List<StudentModel> students = studentDocs.map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    return StudentModel.fromSnapshot(doc.id, data);
+                  }).toList();
+
+                  return ListView.builder(
+                    itemCount: students.length,
+                    itemBuilder: (context, index) {
+                      final doc = students[index];
+                      return Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 3,
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 6,
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 10,
+                            horizontal: 16,
+                          ),
+                          leading: CircleAvatar(
+                            radius: 28,
+                            backgroundImage: NetworkImage(doc.photourl ?? ""),
+                          ),
+                          title: Text(
+                            doc.name ?? 'No Name',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 4),
+                              Text("Email: ${doc.email ?? 'N/A'}"),
+                              Text("Enrollment: ${doc.enrollment ?? 'N/A'}"),
+                              Text("Course: ${doc.course ?? 'N/A'}"),
+                              Text("Semester: ${doc.semester ?? 'N/A'}"),
+                            ],
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.blue,
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          UpdateProfileScreen(student: doc),
+                                    ),
+                                  );
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () {
+                                  FirebaseFirestore.instance
+                                      .collection('Students')
+                                      .doc(doc.id)
+                                      .delete();
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

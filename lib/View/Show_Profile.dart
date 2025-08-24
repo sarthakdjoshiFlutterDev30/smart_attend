@@ -4,6 +4,7 @@ import 'dart:html' as html;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
+import 'package:smart_attend/View/AttendanceSummaryScreen.dart';
 
 import '../Model/student_model.dart';
 import 'update_profile_screen.dart';
@@ -15,7 +16,6 @@ class StudentProfileScreen extends StatelessWidget {
     final snapshot = await FirebaseFirestore.instance
         .collection("Students")
         .get();
-
     return snapshot.docs
         .map((doc) => StudentModel.fromSnapshot(doc.id, doc.data()))
         .toList();
@@ -30,12 +30,10 @@ class StudentProfileScreen extends StatelessWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text("Are You Sure To delete $name"),
+          title: Text("Are You Sure To delete $name?"),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(context),
               child: const Text("No"),
             ),
             TextButton(
@@ -49,7 +47,7 @@ class StudentProfileScreen extends StatelessWidget {
                 );
                 Navigator.pop(context);
               },
-              child: Text("Sure"),
+              child: const Text("Sure"),
             ),
           ],
         );
@@ -73,7 +71,6 @@ class StudentProfileScreen extends StatelessWidget {
     ];
 
     final csvData = const ListToCsvConverter().convert(data);
-
     final bytes = utf8.encode(csvData);
     final blob = html.Blob([bytes]);
     final url = html.Url.createObjectUrlFromBlob(blob);
@@ -86,7 +83,11 @@ class StudentProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("All Students"), centerTitle: true),
+      appBar: AppBar(
+        title: const Text("All Students"),
+        centerTitle: true,
+        backgroundColor: Colors.blue.shade700,
+      ),
       body: Column(
         children: [
           Expanded(
@@ -102,63 +103,89 @@ class StudentProfileScreen extends StatelessWidget {
                 }
 
                 final students = snapshot.data!;
-
                 return ListView.separated(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(12),
                   itemCount: students.length,
-                  separatorBuilder: (context, index) =>
-                      Divider(color: Colors.grey.shade300),
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final student = students[index];
-                    return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                    return Card(
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      leading: CircleAvatar(
-                        radius: 25,
-                        backgroundImage:
-                            student.photourl != null &&
-                                student.photourl!.isNotEmpty
-                            ? NetworkImage(student.photourl!)
-                            : null,
-                        child:
-                            student.photourl == null ||
-                                student.photourl!.isEmpty
-                            ? const Icon(Icons.person)
-                            : null,
-                      ),
-                      title: Text(student.name),
-                      subtitle: Text(student.email),
-                      trailing: PopupMenuButton<String>(
-                        onSelected: (value) async {
-                          if (value == 'Edit') {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    UpdateProfileScreen(student: student),
-                              ),
-                            );
-                          } else if (value == 'Delete') {
-                            await deleteStudent(
-                              context,
-                              student.id,
-                              student.name,
-                            );
-                          }
-                        },
-                        itemBuilder: (BuildContext context) =>
-                            <PopupMenuEntry<String>>[
-                              const PopupMenuItem<String>(
-                                value: 'Edit',
-                                child: Text('Edit'),
-                              ),
-                              const PopupMenuItem<String>(
-                                value: 'Delete',
-                                child: Text('Delete'),
-                              ),
-                            ],
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        leading: CircleAvatar(
+                          radius: 28,
+                          backgroundColor: Colors.grey.shade200,
+                          backgroundImage:
+                              student.photourl != null &&
+                                  student.photourl!.isNotEmpty
+                              ? NetworkImage(student.photourl!)
+                              : null,
+                          child:
+                              student.photourl == null ||
+                                  student.photourl!.isEmpty
+                              ? const Icon(Icons.person, size: 28)
+                              : null,
+                        ),
+                        title: Text(
+                          student.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 4),
+                            Text(student.email),
+                            Text("Enrollment: ${student.enrollment}"),
+                            Text("Course: ${student.course}"),
+                            Text("Semester: ${student.semester}"),
+                          ],
+                        ),
+                        trailing: PopupMenuButton<String>(
+                          onSelected: (value) async {
+                            if (value == 'Edit') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      UpdateProfileScreen(student: student),
+                                ),
+                              );
+                            } else if (value == 'Delete') {
+                              await deleteStudent(
+                                context,
+                                student.id,
+                                student.name,
+                              );
+                            } else if (value == 'Attendance Summary') {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AttendanceSummaryScreen(
+                                    enrollmentNo: student.enrollment,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(value: 'Edit', child: Text('Edit')),
+                            PopupMenuItem(
+                              value: 'Delete',
+                              child: Text('Delete'),
+                            ),
+                            PopupMenuItem(
+                              value: 'Attendance Summary',
+                              child: Text('Attendance Summary'),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -167,18 +194,32 @@ class StudentProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.download),
-            label: const Text("Export CSV"),
-            onPressed: () async {
-              await exportToCSVWeb(
-                await FirebaseFirestore.instance
-                    .collection("Students")
-                    .get()
-                    .then((snapshot) => snapshot.docs),
-              );
-            },
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.download),
+                label: const Text("Export CSV", style: TextStyle(fontSize: 16)),
+                onPressed: () async {
+                  await exportToCSVWeb(
+                    await FirebaseFirestore.instance
+                        .collection("Students")
+                        .get()
+                        .then((snapshot) => snapshot.docs),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  backgroundColor: Colors.blue,
+                ),
+              ),
+            ),
           ),
+          const SizedBox(height: 16),
         ],
       ),
     );

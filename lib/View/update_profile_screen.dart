@@ -12,7 +12,6 @@ import '../Model/student_model.dart';
 
 class UpdateProfileScreen extends StatefulWidget {
   final StudentModel student;
-
   const UpdateProfileScreen({super.key, required this.student});
 
   @override
@@ -45,14 +44,10 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   }
 
   Future<void> updateStudent() async {
-    setState(() {
-      _isLoading = false;
-    });
-
+    setState(() => _isLoading = false);
     String photourl = widget.student.photourl ?? "";
 
     try {
-      // Upload new image if selected
       if ((kIsWeb && selectedImage != null) ||
           (!kIsWeb && profilepic != null)) {
         final String filename = const Uuid().v4();
@@ -65,7 +60,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
           final bytes = await selectedImage!.readAsBytes();
           if (bytes.length > 50 * 1024) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Image must be below 50 KB")),
+              const SnackBar(content: Text("Image must be below 50 KB")),
             );
             setState(() => _isLoading = true);
             return;
@@ -75,7 +70,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
           final fileSize = await profilepic!.length();
           if (fileSize > 50 * 1024) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Image must be below 50 KB")),
+              const SnackBar(content: Text("Image must be below 50 KB")),
             );
             setState(() => _isLoading = true);
             return;
@@ -107,18 +102,28 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text("Update failed: $e")));
     } finally {
-      setState(() {
-        _isLoading = true;
-      });
+      setState(() => _isLoading = true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Update Profile"), centerTitle: true),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      appBar: AppBar(
+        title: const Text("Update Profile"),
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue.shade700, Colors.blue.shade400],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             CupertinoButton(
@@ -129,14 +134,15 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     source: ImageSource.gallery,
                   );
                   if (pickedImage != null) {
-                    int imageSize = await pickedImage.length();
+                    final imageSize = await pickedImage.length();
                     if (imageSize > 50 * 1024) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Image must be below 50 KB")),
+                        const SnackBar(
+                          content: Text("Image must be below 50 KB"),
+                        ),
                       );
                       return;
                     }
-
                     setState(() {
                       if (kIsWeb) {
                         selectedImage = pickedImage;
@@ -150,8 +156,8 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                 }
               },
               child: CircleAvatar(
+                radius: 50,
                 backgroundColor: Colors.grey[300],
-                radius: 40,
                 backgroundImage: kIsWeb
                     ? (selectedImage != null
                           ? NetworkImage(selectedImage!.path)
@@ -165,28 +171,57 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                                       as ImageProvider
                                 : null)),
                 child:
-                    kIsWeb && selectedImage == null ||
-                        !kIsWeb && profilepic == null
-                    ? Icon(Icons.add_a_photo, color: Colors.black)
+                    (kIsWeb && selectedImage == null) ||
+                        (!kIsWeb && profilepic == null)
+                    ? const Icon(
+                        Icons.add_a_photo,
+                        color: Colors.black,
+                        size: 30,
+                      )
                     : null,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(labelText: "Name"),
+              decoration: InputDecoration(
+                labelText: "Name",
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
+            const SizedBox(height: 12),
             TextField(
               controller: enrollmentController,
-              decoration: const InputDecoration(labelText: "Enrollment"),
+              decoration: InputDecoration(
+                labelText: "Enrollment",
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              decoration: const InputDecoration(labelText: "Select Course"),
+              decoration: InputDecoration(
+                labelText: "Select Course",
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               value: selectedCourse,
-              items: courseSemesters.keys.map((course) {
-                return DropdownMenuItem(value: course, child: Text(course));
-              }).toList(),
+              items: courseSemesters.keys
+                  .map(
+                    (course) =>
+                        DropdownMenuItem(value: course, child: Text(course)),
+                  )
+                  .toList(),
               onChanged: (value) {
                 setState(() {
                   selectedCourse = value;
@@ -194,29 +229,53 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                 });
               },
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              decoration: const InputDecoration(labelText: "Select Semester"),
+              decoration: InputDecoration(
+                labelText: "Select Semester",
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               value: selectedSemester,
               items: selectedCourse == null
                   ? []
-                  : courseSemesters[selectedCourse]!.map((sem) {
-                      return DropdownMenuItem(value: sem, child: Text(sem));
-                    }).toList(),
+                  : courseSemesters[selectedCourse]!
+                        .map(
+                          (sem) =>
+                              DropdownMenuItem(value: sem, child: Text(sem)),
+                        )
+                        .toList(),
               onChanged: (value) {
                 setState(() {
                   selectedSemester = value;
                 });
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 25),
             (_isLoading)
-                ? ElevatedButton.icon(
-                    icon: const Icon(Icons.update),
-                    label: const Text("Update"),
-                    onPressed: updateStudent,
+                ? SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.update),
+                      label: const Text(
+                        "Update Profile",
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      onPressed: updateStudent,
+                      style: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        backgroundColor: Colors.blue,
+                      ),
+                    ),
                   )
-                : CircularProgressIndicator(),
+                : const CircularProgressIndicator(),
           ],
         ),
       ),
