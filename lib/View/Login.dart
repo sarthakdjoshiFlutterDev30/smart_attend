@@ -118,7 +118,7 @@ class _LoginState extends State<Login> {
           child: Icon(Icons.fact_check, size: 40, color: colorScheme.onPrimaryContainer),
         ),
         const SizedBox(height: 24),
-        Text("Welcome back 👋", style: headlineStyle, textAlign: compact ? TextAlign.center : TextAlign.start),
+        Text("Welcome 👋", style: headlineStyle, textAlign: compact ? TextAlign.center : TextAlign.start),
         const SizedBox(height: 12),
         Text(
           "Sign in to manage attendance, monitor sessions, and stay on top of your institute's activity.",
