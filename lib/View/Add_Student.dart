@@ -41,166 +41,173 @@ class _AddStudentState extends State<AddStudent> {
       appBar: AppBar(
         title: const Text("Add Student"),
         centerTitle: true,
-        backgroundColor: Colors.blue.shade700,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            GestureDetector(
-              onTap: () async {
-                try {
-                  XFile? pickedImage = await ImagePicker().pickImage(
-                    source: ImageSource.gallery,
-                  );
-                  if (pickedImage != null) {
-                    int imageSize = await pickedImage.length();
-                    if (imageSize > 50 * 1024) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Image must be below 50 KB"),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 900;
+          final maxFormWidth = isWide ? 720.0 : 520.0;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxFormWidth),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                "Student Details",
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            const Spacer(),
+                          ],
                         ),
-                      );
-                      return;
-                    }
+                        const SizedBox(height: 20),
+                        Center(
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(60),
+                            onTap: () async {
+                              try {
+                                XFile? pickedImage = await ImagePicker().pickImage(
+                                  source: ImageSource.gallery,
+                                );
+                                if (pickedImage != null) {
+                                  int imageSize = await pickedImage.length();
+                                  if (imageSize > 50 * 1024) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Image must be below 50 KB"),
+                                      ),
+                                    );
+                                    return;
+                                  }
 
-                    setState(() {
-                      if (kIsWeb) {
-                        selectedImage = pickedImage;
-                      } else {
-                        profilepic = File(pickedImage.path);
-                      }
-                    });
-                  }
-                } catch (e) {
-                  print("Image Picker Error: $e");
-                }
-              },
-              child: CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.blue.shade100,
-                backgroundImage: kIsWeb
-                    ? (selectedImage != null
-                          ? NetworkImage(selectedImage!.path)
-                          : null)
-                    : (profilepic != null ? FileImage(profilepic!) : null)
-                          as ImageProvider<Object>?,
-                child: selectedImage == null && profilepic == null
-                    ? const Icon(Icons.add_a_photo, size: 40)
-                    : null,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            _buildTextField(name, "Name", Icons.person),
-            const SizedBox(height: 10),
-
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: "Select Course",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade100,
-              ),
-              value: selectedCourse,
-              items: courseSemesters.keys.map((course) {
-                return DropdownMenuItem(value: course, child: Text(course));
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedCourse = value;
-                  selectedSemester = null;
-                });
-              },
-            ),
-            const SizedBox(height: 10),
-
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: "Select Semester",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade100,
-              ),
-              value: selectedSemester,
-              items: selectedCourse == null
-                  ? []
-                  : courseSemesters[selectedCourse]!.map((sem) {
-                      return DropdownMenuItem(value: sem, child: Text(sem));
-                    }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedSemester = value;
-                });
-              },
-            ),
-            const SizedBox(height: 10),
-
-            _buildTextField(
-              enrollment,
-              "Enrollment No.",
-              Icons.confirmation_num,
-            ),
-            const SizedBox(height: 10),
-
-            _buildTextField(email, "Email", Icons.email),
-            const SizedBox(height: 10),
-
-            TextField(
-              controller: password,
-              obscureText: _isshow,
-              obscuringCharacter: "*",
-              decoration: InputDecoration(
-                labelText: "Password",
-                prefixIcon: const Icon(Icons.lock),
-                suffixIcon: TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _isshow = !_isshow;
-                    });
-                  },
-                  child: Text(_isshow ? "Show" : "Hide"),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade100,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            _isloading
-                ? SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        await _addStudent();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: Colors.blue.shade700,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                                  setState(() {
+                                    if (kIsWeb) {
+                                      selectedImage = pickedImage;
+                                    } else {
+                                      profilepic = File(pickedImage.path);
+                                    }
+                                  });
+                                }
+                              } catch (e) {
+                                print("Image Picker Error: $e");
+                              }
+                            },
+                            child: CircleAvatar(
+                              radius: 50,
+                              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                              backgroundImage: kIsWeb
+                                  ? (selectedImage != null
+                                        ? NetworkImage(selectedImage!.path)
+                                        : null)
+                                  : (profilepic != null ? FileImage(profilepic!) : null)
+                                        as ImageProvider<Object>?,
+                              child: selectedImage == null && profilepic == null
+                                  ? Icon(Icons.add_a_photo, size: 40, color: Theme.of(context).colorScheme.onPrimaryContainer)
+                                  : null,
+                            ),
+                          ),
                         ),
-                        textStyle: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                        const SizedBox(height: 20),
+                        _buildTextField(name, "Name", Icons.person),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            labelText: "Select Course",
+                          ),
+                          initialValue: selectedCourse,
+                          items: courseSemesters.keys.map((course) {
+                            return DropdownMenuItem(value: course, child: Text(course));
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedCourse = value;
+                              selectedSemester = null;
+                            });
+                          },
                         ),
-                      ),
-                      child: const Text(
-                        "Add Student",
-                        style: TextStyle(color: Colors.white),
-                      ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            labelText: "Select Semester",
+                          ),
+                          initialValue: selectedSemester,
+                          items: selectedCourse == null
+                              ? []
+                              : courseSemesters[selectedCourse!]!.map((sem) {
+                                  return DropdownMenuItem(value: sem, child: Text(sem));
+                                }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedSemester = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        _buildTextField(
+                          enrollment,
+                          "Enrollment No.",
+                          Icons.confirmation_num,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildTextField(email, "Email", Icons.email),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: password,
+                          obscureText: _isshow,
+                          obscuringCharacter: "*",
+                          decoration: InputDecoration(
+                            labelText: "Password",
+                            prefixIcon: const Icon(Icons.lock),
+                            suffixIcon: TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isshow = !_isshow;
+                                });
+                              },
+                              child: Text(_isshow ? "Show" : "Hide"),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        _isloading
+                            ? Row(
+                                children: [
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      onPressed: () async {
+                                        await _addStudent();
+                                      },
+                                      icon: const Icon(Icons.person_add_alt_1),
+                                      label: const Text("Add Student"),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : const Center(child: CircularProgressIndicator()),
+                      ],
                     ),
-                  )
-                : const CircularProgressIndicator(),
-          ],
-        ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -215,9 +222,6 @@ class _AddStudentState extends State<AddStudent> {
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        filled: true,
-        fillColor: Colors.grey.shade100,
       ),
     );
   }
