@@ -34,19 +34,14 @@ class _MyAppState extends State<MyApp> {
       setState(() {
         _token = token;
       });
-      print('FCM Token: $_token');
     });
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('Received a message while in the foreground!');
-      print('Message data: ${message.data}');
 
       if (message.notification != null) {
-        print('Message also contained a notification: ${message.notification}');
       }
     });
   }
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -60,7 +55,7 @@ class _MyAppState extends State<MyApp> {
 
 ThemeData _buildTheme(Brightness brightness) {
   final baseScheme = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF3B82F6), // Tailwind blue-500 style seed
+    seedColor: const Color(0xFF3B82F6),
     brightness: brightness,
   );
 

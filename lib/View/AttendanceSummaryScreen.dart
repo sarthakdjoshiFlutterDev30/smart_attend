@@ -68,7 +68,6 @@ class _AttendanceSummaryScreenState extends State<AttendanceSummaryScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Error fetching attendance: $e");
       setState(() {
         _isLoading = false;
       });
@@ -119,7 +118,6 @@ class _AttendanceSummaryScreenState extends State<AttendanceSummaryScreen> {
                         )
                       : Column(
                           children: [
-                            // Header card with overall percentage and student id
                             Card(
                               elevation: 2,
                               shape: RoundedRectangleBorder(
@@ -129,7 +127,6 @@ class _AttendanceSummaryScreenState extends State<AttendanceSummaryScreen> {
                                 padding: const EdgeInsets.all(16.0),
                                 child: Row(
                                   children: [
-                                    // Circular indicator
                                     Stack(
                                       alignment: Alignment.center,
                                       children: [

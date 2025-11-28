@@ -27,8 +27,8 @@ class _AddStudentState extends State<AddStudent> {
   String? selectedCourse;
   String? selectedSemester;
 
-  File? profilepic; // for mobile
-  XFile? selectedImage; // for web
+  File? profilepic;
+  XFile? selectedImage;
 
   final Map<String, List<String>> courseSemesters = {
     'MCA': ['1', '2', '3', '4'],
@@ -105,7 +105,11 @@ class _AddStudentState extends State<AddStudent> {
                                   });
                                 }
                               } catch (e) {
-                                print("Image Picker Error: $e");
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text("Image Picker Error: $e"),
+                                  ),
+                                );
                               }
                             },
                             child: CircleAvatar(
@@ -130,7 +134,7 @@ class _AddStudentState extends State<AddStudent> {
                           decoration: const InputDecoration(
                             labelText: "Select Course",
                           ),
-                          initialValue: selectedCourse,
+                          value: selectedCourse,
                           items: courseSemesters.keys.map((course) {
                             return DropdownMenuItem(value: course, child: Text(course));
                           }).toList(),
@@ -146,7 +150,7 @@ class _AddStudentState extends State<AddStudent> {
                           decoration: const InputDecoration(
                             labelText: "Select Semester",
                           ),
-                          initialValue: selectedSemester,
+                          value: selectedSemester,
                           items: selectedCourse == null
                               ? []
                               : courseSemesters[selectedCourse!]!.map((sem) {
@@ -314,10 +318,9 @@ class _AddStudentState extends State<AddStudent> {
         _isloading = true;
       });
     } catch (e) {
-      print("Error adding student: $e");
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Failed to add student")));
+      ).showSnackBar(SnackBar(content: Text("Failed to add student: $e")));
       setState(() {
         _isloading = true;
       });

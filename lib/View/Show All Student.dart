@@ -93,7 +93,7 @@ class _ShowAllStudentState extends State<ShowAllStudent> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                   ),
-                                  initialValue: selectedCourse,
+                                  value: selectedCourse,
                                   items: courseSemesters.keys.map((course) {
                                     return DropdownMenuItem(
                                       value: course,
@@ -120,7 +120,7 @@ class _ShowAllStudentState extends State<ShowAllStudent> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                   ),
-                                  initialValue: selectedSemester,
+                                  value: selectedSemester,
                                   items: selectedCourse == null
                                       ? []
                                       : courseSemesters[selectedCourse]!.map((sem) {
@@ -193,7 +193,6 @@ class _ShowAllStudentState extends State<ShowAllStudent> {
                               return StudentModel.fromSnapshot(doc.id, data);
                             }).toList();
 
-                            // Apply client-side search filter
                             if (_searchQuery.isNotEmpty) {
                               students = students.where((s) {
                                 final name = (s.name ?? '').toLowerCase();

@@ -237,7 +237,6 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                             return const Center(child: Text("No students found"));
                           }
                           List<StudentModel> students = snapshot.data!;
-                          // Client-side search
                           if (_searchQuery.isNotEmpty) {
                             students = students.where((s) {
                               final name = (s.name).toLowerCase();

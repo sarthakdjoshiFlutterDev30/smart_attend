@@ -15,7 +15,6 @@ class ApiService {
     if (res.statusCode != 200) {
       throw Exception('Failed to send notification');
     }
-    print("Notification Send: ${res.data}");
   }
 
 }

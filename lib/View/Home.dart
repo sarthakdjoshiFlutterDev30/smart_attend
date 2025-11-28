@@ -65,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final todayDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Dashboard"),
+        title: const Text("Dashboard",style: TextStyle(fontSize: 28),),
         centerTitle: true,
         actions: [
           IconButton(
@@ -80,14 +80,11 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           key: ValueKey(isDark),
           child: LayoutBuilder(builder: (context, constraints) {
-            // responsive calculations can be added here if needed
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // Simple welcome only (no stats or dates)
                 const _SimpleWelcomeHeader(),
                 const SizedBox(height: 16),
-                // Quick Actions Grid
                 Align(
                   alignment: Alignment.topCenter,
                   child: ConstrainedBox(
@@ -109,7 +106,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Dynamic: Today's Sessions (no static data)
                 Align(
                   alignment: Alignment.topCenter,
                   child: ConstrainedBox(
@@ -167,7 +163,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                   );
                                 }
                                 final docs = List<QueryDocumentSnapshot>.from(snapshot.data!.docs);
-                                // Client-side sorting by lecNo; attempts numeric sort, falls back to string
                                 docs.sort((a, b) {
                                   final am = a.data() as Map<String, dynamic>;
                                   final bm = b.data() as Map<String, dynamic>;
@@ -348,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.setBool('isLoggedIn', false);
                 if (!mounted) return;
-                Navigator.of(context).pop(); // close dialog
+                Navigator.of(context).pop();
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const Login()),
                   (route) => false,
