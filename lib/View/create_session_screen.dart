@@ -184,7 +184,7 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
           );
         },
       ),
-    ).then((_) => timer?.cancel()); // Cancel timer if dialog is manually closed
+    ).then((_) => timer?.cancel());
   }
 
   @override

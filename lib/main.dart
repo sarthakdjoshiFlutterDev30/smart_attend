@@ -46,7 +46,6 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -60,7 +59,7 @@ class _MyAppState extends State<MyApp> {
 
 ThemeData _buildTheme(Brightness brightness) {
   final baseScheme = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF3B82F6), // Tailwind blue-500 style seed
+    seedColor: const Color(0xFF3B82F6),
     brightness: brightness,
   );
 

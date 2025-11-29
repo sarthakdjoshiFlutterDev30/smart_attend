@@ -27,8 +27,8 @@ class _AddStudentState extends State<AddStudent> {
   String? selectedCourse;
   String? selectedSemester;
 
-  File? profilepic; // for mobile
-  XFile? selectedImage; // for web
+  File? profilepic;
+  XFile? selectedImage;
 
   final Map<String, List<String>> courseSemesters = {
     'MCA': ['1', '2', '3', '4'],
