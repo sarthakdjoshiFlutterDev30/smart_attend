@@ -4,20 +4,19 @@ import 'package:flutter/material.dart';
 import '../Model/student_model.dart';
 import 'update_profile_screen.dart';
 
-class ShowAllStudent extends StatefulWidget {
-  const ShowAllStudent({super.key});
+class ShowAllTeacher extends StatefulWidget {
+  const ShowAllTeacher({super.key});
 
   @override
-  State<ShowAllStudent> createState() => _ShowAllStudentState();
+  State<ShowAllTeacher> createState() => _ShowAllTeacherState();
 }
 
-class _ShowAllStudentState extends State<ShowAllStudent> {
+class _ShowAllTeacherState extends State<ShowAllTeacher> {
   String? selectedCourse;
-  String? selectedSemester;
 
-  final Map<String, List<String>> courseSemesters = {
-    'MCA': ['1', '2', '3', '4'],
-    'BCA': ['1', '2', '3', '4', '5', '6'],
+  final Set<String> courseSemesters = {
+    'MCA',
+    'BCA'
   };
 
   final TextEditingController _searchController = TextEditingController();
@@ -62,7 +61,7 @@ class _ShowAllStudentState extends State<ShowAllStudent> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text("All Students",style: TextStyle(color: Colors.white),),
+        title: const Text("All Teacher"),
         centerTitle: true,
         backgroundColor: Colors.black,
         elevation: 10,
@@ -100,7 +99,7 @@ class _ShowAllStudentState extends State<ShowAllStudent> {
                                 decoration: _inputStyle("Select Course", Icons.school),
                                 style: const TextStyle(color: Colors.white),
                                 initialValue: selectedCourse,
-                                items: courseSemesters.keys.map((course) {
+                                items: courseSemesters.map((course) {
                                   return DropdownMenuItem(
                                     value: course,
                                     child: Text(course,
@@ -110,31 +109,6 @@ class _ShowAllStudentState extends State<ShowAllStudent> {
                                 onChanged: (value) {
                                   setState(() {
                                     selectedCourse = value;
-                                    selectedSemester = null;
-                                  });
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: DropdownButtonFormField<String>(
-                                dropdownColor: Colors.black,
-                                decoration:
-                                _inputStyle("Select Semester", Icons.calendar_month),
-                                style: const TextStyle(color: Colors.white),
-                                initialValue: selectedSemester,
-                                items: selectedCourse == null
-                                    ? []
-                                    : courseSemesters[selectedCourse]!.map((sem) {
-                                  return DropdownMenuItem(
-                                    value: sem,
-                                    child: Text(sem,
-                                        style: const TextStyle(color: Colors.white)),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    selectedSemester = value;
                                   });
                                 },
                               ),
@@ -146,7 +120,7 @@ class _ShowAllStudentState extends State<ShowAllStudent> {
                           controller: _searchController,
                           style: const TextStyle(color: Colors.white),
                           decoration:
-                          _inputStyle("Search name or enrollment", Icons.search),
+                          _inputStyle("Search name or Teacher Id", Icons.search),
                         ),
                       ],
                     ),
@@ -157,13 +131,12 @@ class _ShowAllStudentState extends State<ShowAllStudent> {
                   /// ---------- STUDENT LIST ----------
                   Expanded(
                     child: StreamBuilder<QuerySnapshot>(
-                      stream: selectedCourse == null || selectedSemester == null
+                      stream: selectedCourse == null
                           ? null
                           : FirebaseFirestore.instance
                           .collection('Students')
                           .where("course", isEqualTo: selectedCourse)
-                          .where("semester", isEqualTo: selectedSemester)
-                          .where('role',isEqualTo: 'student')
+                          .where('role',isEqualTo: 'teacher')
                           .snapshots(),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
@@ -178,7 +151,7 @@ class _ShowAllStudentState extends State<ShowAllStudent> {
                             snapshot.data!.docs.isEmpty) {
                           return const Center(
                             child: Text(
-                              "No student found",
+                              "No Teacher found",
                               style:
                               TextStyle(color: Colors.white54, fontSize: 16),
                             ),
@@ -201,7 +174,7 @@ class _ShowAllStudentState extends State<ShowAllStudent> {
                         if (students.isEmpty) {
                           return const Center(
                             child: Text(
-                              "No matching student",
+                              "No matching Teacher",
                               style:
                               TextStyle(color: Colors.white54, fontSize: 16),
                             ),
@@ -247,8 +220,6 @@ class _ShowAllStudentState extends State<ShowAllStudent> {
                                           s.enrollment ?? 'N/A'),
                                       _chip(Icons.school,
                                           s.course ?? 'N/A'),
-                                      _chip(Icons.calendar_today,
-                                          "Sem ${s.semester}"),
                                     ],
                                   ),
                                 ),

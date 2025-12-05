@@ -1,149 +1,107 @@
 import 'dart:async';
-import 'dart:html' as html;
-import 'dart:typed_data';
+import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:file_saver/file_saver.dart';
 
 class CreateSessionScreen extends StatefulWidget {
-  const CreateSessionScreen({super.key});
+  final String Name;
+  const CreateSessionScreen({super.key, required this.Name});
 
   @override
   State<CreateSessionScreen> createState() => _CreateSessionScreenState();
 }
 
 class _CreateSessionScreenState extends State<CreateSessionScreen> {
-  String fileName = "";
-  List<Map<String, dynamic>> excelData = [];
-  bool isUploading = false;
+
   String todayDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
-  Future<void> downloadSample() async {
-    try {
-      final byteData = await rootBundle.load('Book1.xlsx');
-      final bytes = byteData.buffer.asUint8List();
-      const fileName = 'Sample_Attendance.xlsx';
-      const mime =
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-      if (kIsWeb) {
-        final blob = html.Blob([bytes], mime);
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.AnchorElement(href: url)..download = fileName;
-        anchor.click();
-        html.Url.revokeObjectUrl(url);
-      } else {
-        await FileSaver.instance.saveFile(
-          name: fileName,
-          bytes: bytes,
-          mimeType: MimeType.microsoftExcel,
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to download sample file")),
-      );
-    }
-  }
-  void pickAndReadExcelWeb() {
-    html.FileUploadInputElement uploadInput = html.FileUploadInputElement();
-    uploadInput.accept = '.xlsx';
-    uploadInput.click();
+  String locationMessage = "";
 
-    uploadInput.onChange.listen((e) {
-      final file = uploadInput.files?.first;
-      if (file != null) {
-        fileName = file.name;
-        final reader = html.FileReader();
-        reader.readAsArrayBuffer(file);
+  double lat = 0.0;
+  double log = 0.0;
 
-        reader.onLoadEnd.listen((e) {
-          final result = reader.result;
-          late Uint8List uint8List;
+  Map<String, bool> switchStates = {};
 
-          if (result is ByteBuffer) {
-            uint8List = result.asUint8List();
-          } else if (result is Uint8List) {
-            uint8List = result;
-          } else {
-            return;
-          }
-
-          final excel = Excel.decodeBytes(uint8List);
-          List<Map<String, dynamic>> extracted = [];
-
-          for (var table in excel.tables.keys) {
-            final rows = excel.tables[table]!.rows;
-            for (int i = 1; i < rows.length; i++) {
-              var row = rows[i];
-              extracted.add({
-                'lecNo': row[0]?.value.toString(),
-                'lecName': row[1]?.value.toString(),
-                'lecDate': row[2]?.value.toString(),
-              });
-            }
-          }
-
-          setState(() {
-            excelData = extracted;
-          });
-        });
-      }
-    });
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocationForWeb();
   }
 
-  Future<void> uploadToFirestore() async {
-    if (excelData.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please upload an Excel file first")),
-      );
+  // ================= GET LOCATION FOR WEB =================
+  Future<void> _getCurrentLocationForWeb() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+
+    if (!serviceEnabled) {
+      setState(() {
+        locationMessage = "Location disabled on browser";
+      });
       return;
     }
 
-    setState(() => isUploading = true);
+    LocationPermission permission = await Geolocator.checkPermission();
 
-    WriteBatch batch = FirebaseFirestore.instance.batch();
-    for (var record in excelData) {
-      DocumentReference ref = FirebaseFirestore.instance
-          .collection('sessions')
-          .doc();
-      batch.set(ref, {
-        'lecNo': record['lecNo'],
-        'lecName': record['lecName'].toString().toUpperCase(),
-        'lecDate': DateFormat('dd-MM-yyyy').format(
-          record['lecDate'] is DateTime
-              ? record['lecDate']
-              : DateTime.tryParse(record['lecDate'] ?? '') ?? DateTime.now(),
-        ),
-        'uploadedAt': DateTime.now().millisecondsSinceEpoch,
-        'createdAtMillis': DateTime.now().millisecondsSinceEpoch,
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      setState(() {
+        locationMessage = "Location permanently denied";
+      });
+      return;
+    }
+
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.best
+      );
+
+      setState(() {
+        lat = position.latitude;
+        log = position.longitude;
+        locationMessage = "Latitude: $lat , Longitude: $log";
+      });
+
+      print("Teacher Web Location => $locationMessage");
+
+    } catch (e) {
+      print("Location error: $e");
+
+      // Fallback if browser blocks GPS
+      setState(() {
+        lat = 0.0 + Random().nextDouble();
+        log = 0.0 + Random().nextDouble();
       });
     }
-    await batch.commit();
-
-    setState(() {
-      isUploading = false;
-      excelData.clear();
-    });
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Data uploaded successfully")));
   }
 
-  void showQRCode(String docId) {
+  // ================= SHOW QR =================
+  void showQRCode(String docId, String Name, String course, String semester) {
     int secondsLeft = 10;
     Timer? timer;
+
+    FirebaseFirestore.instance
+        .collection("notification")
+        .doc(docId)
+        .set({
+      'docId': docId,
+      'lat': lat,
+      'log': log,
+      'course': course,
+      'semester': semester,
+      'createdAt': DateTime.now().millisecondsSinceEpoch,
+    });
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
+
           timer ??= Timer.periodic(const Duration(seconds: 1), (t) {
             if (secondsLeft > 1) {
               setState(() {
@@ -156,284 +114,290 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
           });
 
           return AlertDialog(
-            title: const Text("QR Code"),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            backgroundColor: Colors.grey[900],
+            title: Column(
+              children: [
+                Text(
+                  "Lec Name = $Name",
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  "Lec ID : $docId",
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white70
+                  ),
+                ),
+              ],
+            ),
             content: SizedBox(
-              width: 250,
-              height: 250,
+              width: 260,
+              height: 280,
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  QrImageView(data: docId, size: 200),
-                  const SizedBox(height: 20),
+                  QrImageView(
+                    data: docId,
+                    size: 220,
+                    backgroundColor: Colors.white,
+                  ),
+                  const SizedBox(height: 12),
                   Text(
-                    "Expires in $secondsLeft s",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    "Expires in $secondsLeft seconds",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.redAccent,
+                    ),
                   ),
                 ],
               ),
             ),
             actions: [
               TextButton(
-                onPressed: () {
+                onPressed: () async {
                   timer?.cancel();
+
+                  if (mounted) {
+                    this.setState(() {
+                      switchStates[docId] = false;
+                    });
+                  }
+
+                  await FirebaseFirestore.instance
+                      .collection("sessions")
+                      .doc(docId)
+                      .update({'isActive': false});
+
+                  await FirebaseFirestore.instance
+                      .collection("notification")
+                      .doc(docId)
+                      .delete();
+
                   Navigator.pop(context);
                 },
-                child: const Text("Close"),
+                child: const Text(
+                  "Close",
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           );
         },
       ),
-    ).then((_) => timer?.cancel());
+    ).then((_) async {
+
+      if (mounted) {
+        this.setState(() {
+          switchStates[docId] = false;
+        });
+      }
+
+      await FirebaseFirestore.instance
+          .collection("sessions")
+          .doc(docId)
+          .update({'isActive': false});
+
+      await FirebaseFirestore.instance
+          .collection("notification")
+          .doc(docId)
+          .delete();
+
+      timer?.cancel();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final darkGrey = Colors.grey[900];
+    final cardGrey = Colors.grey[850];
+
     return Scaffold(
+      backgroundColor: darkGrey,
       appBar: AppBar(
         elevation: 0,
-        title: const Text("Create Session"),
+        title: const Text("Create Session",style: TextStyle(color: Colors.white),),
         centerTitle: true,
+        backgroundColor: Colors.white12,
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.primary.withOpacity(0.06),
-              colorScheme.secondary.withOpacity(0.06),
-            ],
-          ),
-        ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 900),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Align(
-                    alignment: Alignment.center,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 700),
-                      child: Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.upload_file, color: colorScheme.primary),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    "Upload Excel",
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  OutlinedButton.icon(
-                                    onPressed: downloadSample,
-                                    icon: const Icon(Icons.download),
-                                    label: const Text("Download Sample"),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  OutlinedButton.icon(
-                                    onPressed: pickAndReadExcelWeb,
-                                    icon: const Icon(Icons.folder_open),
-                                    label: const Text("Pick File"),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 250),
-                                child: fileName.isEmpty
-                                    ? Text(
-                                        "No file selected",
-                                        key: const ValueKey("no-file"),
-                                        style: TextStyle(
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      )
-                                    : Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
-                                        children: [
-                                          Chip(
-                                            key: const ValueKey("file-chip"),
-                                            avatar: const Icon(Icons.insert_drive_file, size: 18),
-                                            label: Text(fileName),
-                                            backgroundColor: colorScheme.primary.withOpacity(0.08),
-                                          ),
-                                        ],
-                                      ),
-                              ),
-                              const SizedBox(height: 16),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton.icon(
-                                  onPressed: isUploading ? null : uploadToFirestore,
-                                  icon: isUploading
-                                      ? SizedBox(
-                                          width: 18,
-                                          height: 18,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(
-                                              colorScheme.onPrimary,
-                                            ),
-                                          ),
-                                        )
-                                      : const Icon(Icons.cloud_upload),
-                                  label: Text(isUploading ? "Uploading..." : "Upload to Firestore"),
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    "Today • $todayDate",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Align(
-                    alignment: Alignment.center,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 900),
-                      child: Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.history, color: colorScheme.primary),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    "Today's Sessions",
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              const Divider(height: 1),
-                              const SizedBox(height: 8),
-                              SizedBox(
-                                height: 8,
-                              ),
-                              SizedBox(
-                                height: 300,
-                                child: StreamBuilder<QuerySnapshot>(
-                                  stream: FirebaseFirestore.instance
-                                      .collection('sessions')
-                                      .orderBy('lecNo')
-                                      .snapshots(),
-                                  builder: (context, snapshot) {
-                                    if (!snapshot.hasData) {
-                                      return const Center(child: CircularProgressIndicator());
-                                    }
-                                    final docs = snapshot.data!.docs;
-                                    if (docs.isEmpty) {
-                                      return const Center(child: Text("No data found"));
-                                    }
-                                    final filtered = docs.where((d) {
-                                      final data = d.data() as Map<String, dynamic>;
-                                      return data['lecDate'] == todayDate;
-                                    }).toList();
-                                    if (filtered.isEmpty) {
-                                      return const Center(child: Text("No sessions for today"));
-                                    }
-                                    return ListView.separated(
-                                      itemCount: filtered.length,
-                                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                                      itemBuilder: (context, index) {
-                                        final doc = filtered[index];
-                                        final data = doc.data() as Map<String, dynamic>;
-                                        final docId = doc.id;
-                                        return Material(
-                                          color: colorScheme.surface,
-                                          elevation: 1,
-                                          borderRadius: BorderRadius.circular(12),
-                                          child: ListTile(
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            title: Text(
-                                              data['lecName'] ?? '',
-                                              style: const TextStyle(fontWeight: FontWeight.w600),
-                                            ),
-                                            subtitle: Row(
-                                              children: [
-                                                const Icon(Icons.confirmation_number, size: 16),
-                                                const SizedBox(width: 6),
-                                                Text("Lec No: ${data['lecNo']}"),
-                                              ],
-                                            ),
-                                            trailing: FilledButton.icon(
-                                              onPressed: () {
-                                                FirebaseFirestore.instance
-                                                    .collection("sessions")
-                                                    .doc(docId)
-                                                    .update({
-                                                      'createdAtMillis': DateTime.now().millisecondsSinceEpoch,
-                                                    })
-                                                    .then((_) {
-                                                      showQRCode(docId);
-                                                    });
-                                              },
-                                              icon: const Icon(Icons.qr_code),
-                                              label: const Text("QR"),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+      body: Column(
+        children: [
+          // ---------------- HEADER ----------------
+          Container(
+            padding: const EdgeInsets.all(20),
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.deepPurple.shade700,
+                  Colors.deepPurple.shade400
                 ],
+              ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "${widget.Name} 👋",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "Today : $todayDate",
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // ---------------- SESSION LIST ----------------
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('sessions')
+                    .orderBy('lecNo')
+                    .snapshots(),
+
+                builder: (context, snapshot) {
+
+                  if (!snapshot.hasData) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    );
+                  }
+
+                  final docs = snapshot.data!.docs;
+
+                  final todaySessions = docs.where((d) {
+                    final data = d.data() as Map<String, dynamic>;
+                    return data['lecDate'] == todayDate;
+                  }).toList();
+
+                  if (todaySessions.isEmpty) {
+                    return const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.event_busy, size: 60, color: Colors.grey),
+                          SizedBox(height: 10),
+                          Text(
+                            "No Sessions For Today",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    itemCount: todaySessions.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 14),
+                    itemBuilder: (context, index) {
+
+                      final doc = todaySessions[index];
+                      final data = doc.data() as Map<String, dynamic>;
+                      final docId = doc.id;
+
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: cardGrey,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(16),
+                          leading: CircleAvatar(
+                            backgroundColor:
+                            Colors.deepPurple.withOpacity(0.2),
+                            child: const Icon(Icons.book,
+                                color: Colors.deepPurple),
+                          ),
+                          title: Text(
+                            data['lecName'] ?? '',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                          subtitle: Text(
+                            "Lecture No: ${data['lecNo']}",
+                            style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.white70
+                            ),
+                          ),
+
+                          trailing: Switch(
+                            value: switchStates[docId] ?? false,
+                            activeColor: Colors.green,
+                            inactiveThumbColor: Colors.red,
+
+                            onChanged: (value) async {
+
+                              setState(() {
+                                switchStates[docId] = value;
+                              });
+
+                              if (value == true) {
+
+                                await FirebaseFirestore.instance
+                                    .collection("sessions")
+                                    .doc(docId)
+                                    .update({
+                                  'createdAtMillis': DateTime.now().millisecondsSinceEpoch,
+                                  'lat': lat,
+                                  'log': log,
+                                  'isActive': true
+                                });
+
+                                showQRCode(
+                                  docId,
+                                  data['lecName'] ?? '',
+                                  data['course'] ?? '',
+                                  data['semester'] ?? '',
+                                );
+
+                              } else {
+                                await FirebaseFirestore.instance
+                                    .collection("sessions")
+                                    .doc(docId)
+                                    .update({'isActive': false});
+                              }
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ),
-        ),
+
+        ],
       ),
     );
   }

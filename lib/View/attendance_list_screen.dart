@@ -16,6 +16,8 @@ class AttendanceListScreen extends StatefulWidget {
 class _AttendanceListScreenState extends State<AttendanceListScreen> {
   String? selectedSessionId;
   String? selectedSessionName;
+  final todayDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
+
 
   Future<void> exportToCSVWeb(List<QueryDocumentSnapshot> docs) async {
     List<List<String>> data = [
@@ -38,7 +40,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
     final blob = html.Blob([bytes]);
     final url = html.Url.createObjectUrlFromBlob(blob);
     final anchor = html.AnchorElement(href: url)
-      ..setAttribute("download", "$selectedSessionName-attendance.csv")
+      ..setAttribute("download", "$selectedSessionName $todayDate-attendance.csv")
       ..click();
     html.Url.revokeObjectUrl(url);
   }
@@ -47,10 +49,15 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
   Widget build(BuildContext context) {
     String date = DateFormat('dd-MM-yyyy').format(DateTime.now());
     return Scaffold(
+      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        title: const Text("Attendance Reports"),
+        title: const Text(
+          "Attendance Reports",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
-        backgroundColor: Colors.blue.shade700,
+        backgroundColor: Colors.blueGrey.shade900,
+        elevation: 4,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -73,7 +80,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                           ?.toString()
                           .trim()
                           .toLowerCase() ??
-                      '';
+                          '';
                   if (seenNames.contains(name)) return false;
                   seenNames.add(name);
                   return true;
@@ -87,17 +94,22 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(15),
                     border: Border.all(color: Colors.blue.shade700),
+                    color: Colors.grey.shade900,
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
+                      dropdownColor: Colors.grey.shade900,
                       value: selectedSessionId,
-                      hint: const Text("Select Session"),
+                      hint: const Text(
+                        "Select Session",
+                        style: TextStyle(color: Colors.white70),
+                      ),
                       onChanged: (value) {
                         final session = uniqueSessions.firstWhere(
-                          (s) => s.id == value,
+                              (s) => s.id == value,
                         );
                         final sessionData =
-                            session.data() as Map<String, dynamic>;
+                        session.data() as Map<String, dynamic>;
                         setState(() {
                           selectedSessionId = value;
                           selectedSessionName =
@@ -109,7 +121,10 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                           value: session.id,
                           child: Text(
                             (session.data() as Map)['lecName'],
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         );
                       }).toList(),
@@ -140,22 +155,22 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                             itemCount: attendees.length,
                             itemBuilder: (context, index) {
                               final data =
-                                  attendees[index].data()
-                                      as Map<String, dynamic>;
+                              attendees[index].data() as Map<String, dynamic>;
                               return Card(
+                                color: Colors.grey,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(15),
                                 ),
-                                elevation: 4,
+                                elevation: 6,
                                 margin: const EdgeInsets.symmetric(vertical: 6),
                                 child: ListTile(
                                   leading: CircleAvatar(
-                                    backgroundColor: Colors.blue.shade200,
+                                    backgroundColor: Colors.blue.shade400,
                                     child: Text(
                                       data['name']
-                                              ?.toString()
-                                              .substring(0, 1)
-                                              .toUpperCase() ??
+                                          ?.toString()
+                                          .substring(0, 1)
+                                          .toUpperCase() ??
                                           '',
                                       style: const TextStyle(
                                         color: Colors.white,
@@ -167,15 +182,23 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                                     data['name'] ?? 'N/A',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
+                                      color: Colors.white,
                                     ),
                                   ),
                                   subtitle: Text(
                                     "EnrollmentNo: ${data['enrollmentNo'] ?? 'N/A'}\nCourse: ${data['course'] ?? 'N/A'} | Sem: ${data['semester'] ?? 'N/A'}",
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                   trailing: Text(
                                     ('${data['timestamp']}-${data['time']}')
                                         .toString(),
-                                    style: const TextStyle(fontSize: 12),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white54,
+                                    ),
                                   ),
                                   isThreeLine: true,
                                 ),
@@ -183,28 +206,31 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                             },
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 12),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
                             icon: const Icon(Icons.download),
                             label: const Text("Export CSV"),
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(14),
                               ),
                               backgroundColor: Colors.blue.shade700,
                               textStyle: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
+                              elevation: 6,
+                              shadowColor: Colors.blue.shade300,
                             ),
                             onPressed: () async {
                               await exportToCSVWeb(attendees);
                             },
                           ),
                         ),
+                        const SizedBox(height: 8),
                       ],
                     );
                   },

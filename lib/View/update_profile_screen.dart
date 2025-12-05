@@ -12,7 +12,8 @@ import '../Model/student_model.dart';
 
 class UpdateProfileScreen extends StatefulWidget {
   final StudentModel student;
-  const UpdateProfileScreen({super.key, required this.student});
+  final String role;
+  const UpdateProfileScreen({super.key, required this.student, required this.role});
 
   @override
   State<UpdateProfileScreen> createState() => _UpdateProfileScreenState();
@@ -26,6 +27,8 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   bool _isLoading = true;
   File? profilepic;
   XFile? selectedImage;
+  bool read=true;
+
 
   final Map<String, List<String>> courseSemesters = {
     'MCA': ['1', '2', '3', '4'],
@@ -44,16 +47,22 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   }
 
   Future<void> updateStudent() async {
+    if (nameController.text.trim().isEmpty ||
+        enrollmentController.text.trim().isEmpty ||
+        (widget.role == "student" && (selectedCourse == null || selectedSemester == null))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("All fields are required")),
+      );
+      return;
+    }
+
     setState(() => _isLoading = false);
     String photourl = widget.student.photourl ?? "";
 
     try {
-      if ((kIsWeb && selectedImage != null) ||
-          (!kIsWeb && profilepic != null)) {
+      if ((kIsWeb && selectedImage != null) || (!kIsWeb && profilepic != null)) {
         final String filename = const Uuid().v4();
-        final ref = FirebaseStorage.instance.ref().child(
-          'student_profiles/$filename',
-        );
+        final ref = FirebaseStorage.instance.ref().child('student_profiles/$filename');
 
         UploadTask uploadTask;
         if (kIsWeb && selectedImage != null) {
@@ -82,25 +91,22 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         photourl = await snapshot.ref.getDownloadURL();
       }
 
-      await FirebaseFirestore.instance
-          .collection("Students")
-          .doc(widget.student.id)
-          .update({
-            'name': nameController.text.trim(),
-            'enrollment': enrollmentController.text.trim(),
-            'course': selectedCourse,
-            'semester': selectedSemester,
-            'photourl': photourl,
-          });
+      await FirebaseFirestore.instance.collection("Students").doc(widget.student.id).update({
+        'name': nameController.text.trim(),
+        'enrollment': enrollmentController.text.trim(),
+        'course': widget.role == "student" ? selectedCourse : "",
+        'semester': widget.role == "student" ? selectedSemester : "",
+        'photourl': photourl,
+      });
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Profile updated")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Profile updated")),
+      );
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Update failed: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Update failed: $e")),
+      );
     } finally {
       setState(() => _isLoading = true);
     }
@@ -160,24 +166,22 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                 backgroundColor: Colors.grey[300],
                 backgroundImage: kIsWeb
                     ? (selectedImage != null
-                          ? NetworkImage(selectedImage!.path)
-                          : (widget.student.photourl != null
-                                ? NetworkImage(widget.student.photourl!)
-                                : null))
+                    ? NetworkImage(selectedImage!.path)
+                    : (widget.student.photourl != null
+                    ? NetworkImage(widget.student.photourl!)
+                    : null))
                     : (profilepic != null
-                          ? FileImage(profilepic!)
-                          : (widget.student.photourl != null
-                                ? NetworkImage(widget.student.photourl!)
-                                      as ImageProvider
-                                : null)),
+                    ? FileImage(profilepic!)
+                    : (widget.student.photourl != null
+                    ? NetworkImage(widget.student.photourl!) as ImageProvider
+                    : null)),
                 child:
-                    (kIsWeb && selectedImage == null) ||
-                        (!kIsWeb && profilepic == null)
+                (kIsWeb && selectedImage == null) || (!kIsWeb && profilepic == null)
                     ? const Icon(
-                        Icons.add_a_photo,
-                        color: Colors.black,
-                        size: 30,
-                      )
+                  Icons.add_a_photo,
+                  color: Colors.black,
+                  size: 30,
+                )
                     : null,
               ),
             ),
@@ -196,8 +200,17 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
             const SizedBox(height: 12),
             TextField(
               controller: enrollmentController,
+              readOnly: read,
               decoration: InputDecoration(
-                labelText: "Enrollment",
+                suffixIcon: TextButton(
+                  child: Text(read?"Edit":"Done"),
+                  onPressed: (){
+                    setState(() {
+                      read=!read;
+                    });
+                  },
+                ),
+                labelText: widget.role == "student" ? "Enrollment No." : "Teacher ID",
                 filled: true,
                 fillColor: Colors.grey.shade100,
                 border: OutlineInputBorder(
@@ -217,10 +230,8 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
               ),
               value: selectedCourse,
               items: courseSemesters.keys
-                  .map(
-                    (course) =>
-                        DropdownMenuItem(value: course, child: Text(course)),
-                  )
+                  .map((course) =>
+                  DropdownMenuItem(value: course, child: Text(course)))
                   .toList(),
               onChanged: (value) {
                 setState(() {
@@ -230,51 +241,50 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
               },
             ),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: "Select Semester",
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+            if (widget.role != "teacher") ...[
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: "Select Semester",
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                value: selectedSemester,
+                items: selectedCourse == null
+                    ? []
+                    : courseSemesters[selectedCourse]!
+                    .map((sem) => DropdownMenuItem(value: sem, child: Text(sem)))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedSemester = value;
+                  });
+                },
+              ),
+            ],
+            const SizedBox(height: 25),
+            _isLoading
+                ? SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.update),
+                label: const Text(
+                  "Update Profile",
+                  style: TextStyle(fontSize: 18),
+                ),
+                onPressed: updateStudent,
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  backgroundColor: Colors.blue,
                 ),
               ),
-              value: selectedSemester,
-              items: selectedCourse == null
-                  ? []
-                  : courseSemesters[selectedCourse]!
-                        .map(
-                          (sem) =>
-                              DropdownMenuItem(value: sem, child: Text(sem)),
-                        )
-                        .toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedSemester = value;
-                });
-              },
-            ),
-            const SizedBox(height: 25),
-            (_isLoading)
-                ? SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.update),
-                      label: const Text(
-                        "Update Profile",
-                        style: TextStyle(fontSize: 18),
-                      ),
-                      onPressed: updateStudent,
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        backgroundColor: Colors.blue,
-                      ),
-                    ),
-                  )
+            )
                 : const CircularProgressIndicator(),
           ],
         ),

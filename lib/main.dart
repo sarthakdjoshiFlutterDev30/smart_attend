@@ -50,7 +50,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Smart Attendance Admin',
+      title: 'Xampus Admin',
       theme: _buildTheme(Brightness.light),
       home: Login(),
     );

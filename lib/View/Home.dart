@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:smart_attend/Controller/ApiService.dart';
 import 'package:smart_attend/View/Add_Student.dart';
 import 'package:smart_attend/View/Show%20All%20Student.dart';
+import 'package:smart_attend/View/Show%20All%20Teacher.dart';
 import 'package:smart_attend/View/Show_Profile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,7 +21,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final titleController = TextEditingController();
   final bodyController = TextEditingController();
-  final api = ApiService();
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _DashboardItem(
         icon: Icons.add_box_rounded,
         label: "Create New Session",
-        onTap: () => _navigateTo(context, const CreateSessionScreen()),
+        onTap: () => _navigateTo(context, const CreateSessionScreen(Name: "Principal",)),
       ),
       _DashboardItem(
         icon: Icons.fact_check,
@@ -42,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       _DashboardItem(
         icon: Icons.person_add_alt_1,
-        label: "Add Student",
+        label: "Add User",
         onTap: () => _navigateTo(context, const AddStudent()),
       ),
       _DashboardItem(
@@ -51,9 +50,9 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: () => _navigateTo(context, const ShowAllStudent()),
       ),
       _DashboardItem(
-        icon: Icons.notifications_active,
-        label: "Send Notification",
-        onTap: _showNotificationDialog,
+        icon: Icons.school,
+        label: "Show Teachers",
+        onTap: () => _navigateTo(context, const ShowAllTeacher()),
       ),
       _DashboardItem(
         icon: Icons.assignment_ind,
@@ -266,58 +265,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showNotificationDialog() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Send Notification"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(labelText: "Title"),
-            ),
-            TextField(
-              controller: bodyController,
-              decoration: const InputDecoration(labelText: "Body"),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              titleController.clear();
-              bodyController.clear();
-              Navigator.pop(context);
-            },
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (titleController.text.isEmpty || bodyController.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("All fields are required")),
-                );
-                return;
-              }
-              final title = titleController.text.trim();
-              final body = bodyController.text.trim();
-              await api.sendNotification(title, body);
-              titleController.clear();
-              bodyController.clear();
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Notification sent")),
-              );
-            },
-            child: const Text("Send"),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _navigateTo(BuildContext context, Widget page) {
     Navigator.push(context, MaterialPageRoute(builder: (_) => page));
