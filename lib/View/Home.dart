@@ -64,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final todayDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Dashboard"),
+        title: const Text("Dashboard",style: TextStyle(fontSize: 28),),
         centerTitle: true,
         actions: [
           IconButton(
@@ -290,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.setBool('isLoggedIn', false);
                 if (!mounted) return;
-                Navigator.of(context).pop(); // close dialog
+                Navigator.of(context).pop();
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const Login()),
                   (route) => false,

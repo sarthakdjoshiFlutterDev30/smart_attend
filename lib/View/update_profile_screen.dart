@@ -158,7 +158,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     });
                   }
                 } catch (e) {
-                  print("Image Picker Error: $e");
+                  //
                 }
               },
               child: CircleAvatar(
